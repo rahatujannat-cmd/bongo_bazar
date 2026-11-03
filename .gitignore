@@ -6,4 +6,6 @@ cloudflared.exe
 mingit/
 .env
 .venv/
+*.zip
 env/
+*.zip
