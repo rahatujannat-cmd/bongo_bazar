@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}রিটার্ন ও রিফান্ড পলিসি - BongoBazaar{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-12">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-12 space-y-6 text-slate-700 leading-relaxed text-xs sm:text-sm">
+        
+        <div class="border-b pb-4">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full mb-2">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>৭ দিনের সহজ রিটার্ন</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900">রিটার্ন ও রিফান্ড পলিসি (Return & Refund Policy)</h1>
+            <p class="text-xs text-slate-400 mt-1">গ্রাহকের অধিকার সুরক্ষায় বঙ্গবাজারের স্বচ্ছ নীতিমালা</p>
+        </div>
+
+        <section class="space-y-2">
+            <h2 class="text-base font-bold text-slate-900">১. রিটার্ন যোগ্যতার শর্তাবলী</h2>
+            <p>
+                পণ্য গ্রহণের পর কোনো ত্রুটি পরিলক্ষিত হলে বা বিজ্ঞাপনে বর্ণিত তথ্যের সাথে অমিল থাকলে ডেলিভারির দিন থেকে <strong>৭ (সাত) দিনের মধ্যে</strong> রিটার্ন রিকোয়েস্ট করতে হবে।
+            </p>
+            <ul class="list-disc pl-5 space-y-1 text-slate-600">
+                <li>পণ্যটি অব্যবহৃত, অক্ষত এবং মূল প্যাকেজিং, ট্যাগ ও ইনভয়েস সহ থাকতে হবে।</li>
+                <li>পোশাকের ক্ষেত্রে সাইজ মিসম্যাচ হলে সহজে রিপ্লেসমেন্ট করা যাবে।</li>
+                <li>ইলেকট্রনিক্স পণ্যের ক্ষেত্রে ওয়ারেন্টির শর্তাবলী কার্যকর হবে।</li>
+            </ul>
+        </section>
+
+        <section class="space-y-2">
+            <h2 class="text-base font-bold text-slate-900">২. যে পণ্যগুলো রিটার্নযোগ্য নয়</h2>
+            <p>
+                হাইজিন ও স্বাস্থ্যগত সুরক্ষার কারণে নিম্নলিখিত পণ্যগুলো রিটার্ন করা যাবে না (যদি না পণ্যটি ভাঙা বা মেয়াদোত্তীর্ণ অবস্থায় পৌঁছায়):
+            </p>
+            <ul class="list-disc pl-5 space-y-1 text-slate-600">
+                <li>ব্যক্তিগত প্রসাধনী ও অন্তর্বাস।</li>
+                <li>সিল খোলা খাদ্যপণ্য (যেমন: ব্যবহৃত মধু, তেল ইত্যাদি)।</li>
+            </ul>
+        </section>
+
+        <section class="space-y-2">
+            <h2 class="text-base font-bold text-slate-900">৩. রিটার্ন প্রসেস (কিভাবে ফেরত দেবেন)</h2>
+            <ol class="list-decimal pl-5 space-y-1 text-slate-600">
+                <li>আমাদের হেল্পলাইন (09612-000000) এ কল করে অথবা সাপোর্টে ইমেইল করে অর্ডারের ছবিসহ সমস্যার কথা জানান।</li>
+                <li>আমাদের টিম রিটার্ন রিকোয়েস্ট যাচাই করে অনুমোদন দেবে।</li>
+                <li>আমাদের কুরিয়ার প্রতিনিধি আপনার বাসা থেকে পার্সেল সংগ্রহ করবে।</li>
+            </ol>
+        </section>
+
+        <section class="space-y-2">
+            <h2 class="text-base font-bold text-slate-900">৪. টাকা রিফান্ড হওয়ার সময়সীমা</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div class="p-4 rounded-2xl bg-pink-50 border border-pink-200">
+                    <span class="font-bold text-pink-700 block">বিকাশ / নগদ / রকেট রিফান্ড:</span>
+                    <span class="text-xs text-slate-600">পণ্য আমাদের ওয়্যারহাউজে পৌঁছানোর পর <strong>২৪ থেকে ৪৮ ঘণ্টার মধ্যে</strong> টাকা ফেরত পাবেন।</span>
+                </div>
+                <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200">
+                    <span class="font-bold text-blue-800 block">ডেবিট / ক্রেডিট কার্ড রিফান্ড:</span>
+                    <span class="text-xs text-slate-600">ব্যাংকের প্রসেসিং নীতিমালা অনুযায়ী <strong>৫ থেকে ৭ কার্যদিবস</strong> সময় লাগতে পারে।</span>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

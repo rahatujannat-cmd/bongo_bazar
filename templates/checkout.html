@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+
+{% block title %}নিরাপদ চেকআউট - BongoBazaar{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    
+    <div class="mb-8">
+        <h1 class="text-2xl sm:text-3xl font-black text-slate-900">নিরাপদ চেকআউট প্রসেস</h1>
+        <p class="text-xs text-slate-500 mt-1">অনুগ্রহ করে ডেলিভারি ঠিকানা ও পেমেন্ট মাধ্যম সঠিকভাবে পূরণ করুন</p>
+    </div>
+
+    <form id="checkout-form" novalidate onsubmit="handleCheckout(event)" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left: Address & Payment (2 cols) -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            <!-- Step 1: Customer Contact & Shipping Address -->
+            <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-5">
+                <div class="flex items-center justify-between border-b pb-4">
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-full bg-emerald-600 text-white font-black text-sm flex items-center justify-center">১</span>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">ডেলিভারি তথ্য ও ঠিকানা (Shipping Details)</h3>
+                            <p class="text-[11px] text-slate-400">যে ঠিকানায় পার্সেল পাঠানো হবে</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="fillDemoAddress()" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-200 transition-all flex items-center gap-1.5 shadow-sm">
+                        <i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-600"></i>
+                        <span>অটো-ফিল ডেমো তথ্য</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">পূর্ণ নাম <span class="text-red-500">*</span></label>
+                        <input type="text" id="cust-name" value="{% if g.user %}{{ g.user.name }}{% endif %}" placeholder="যেমন: তানভীর আহমেদ" class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">মোবাইল নম্বর <span class="text-red-500">*</span></label>
+                        <input type="tel" id="cust-phone" value="{% if g.user and g.user.phone %}{{ g.user.phone }}{% endif %}" placeholder="017XXXXXXXX" class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">ইমেইল ঠিকানা</label>
+                        <input type="email" id="cust-email" value="{% if g.user and g.user.email %}{{ g.user.email }}{% endif %}" placeholder="example@email.com (ইনভয়েস পাওয়ার জন্য)" class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">জেলা (District) <span class="text-red-500">*</span></label>
+                        <select id="cust-district" onchange="onDistrictChange(this.value)" class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500 font-semibold">
+                            <option value="Dhaka" selected>ঢাকা (Dhaka)</option>
+                            <option value="Chittagong">চট্টগ্রাম (Chittagong)</option>
+                            <option value="Sylhet">সিলেট (Sylhet)</option>
+                            <option value="Rajshahi">রাজশাহী (Rajshahi)</option>
+                            <option value="Khulna">খুলনা (Khulna)</option>
+                            <option value="Barishal">বরিশাল (Barishal)</option>
+                            <option value="Rangpur">রংপুর (Rangpur)</option>
+                            <option value="Mymensingh">ময়মনসিংহ (Mymensingh)</option>
+                            <option value="Gazipur">গাজীপুর (Gazipur)</option>
+                            <option value="Narayanganj">নারায়ণগঞ্জ (Narayanganj)</option>
+                            <option value="Comilla">কুমিল্লা (Comilla)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">থানা / উপজেলা (Thana/Upazila) <span class="text-red-500">*</span></label>
+                        <input type="text" id="cust-thana" placeholder="যেমন: ধানমন্ডি / গুলশান / কোতোয়ালি" class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">সম্পূর্ণ ঠিকানা (বাসা/রোড/এলাকা) <span class="text-red-500">*</span></label>
+                        <textarea id="cust-address" rows="2" placeholder="যেমন: হাউজ ১২, রোড ৪, ব্লক-সি, সেক্টর ৩..." class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500">{% if g.user and g.user.address %}{{ g.user.address }}{% endif %}</textarea>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">ডেলিভারি নোট (ঐচ্ছিক)</label>
+                        <input type="text" id="cust-notes" placeholder="কল দিয়ে আসবেন, গেটে সিকিউরিটিকে দিন..." class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Delivery Speed Option -->
+            <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex items-center gap-3 border-b pb-4">
+                    <span class="w-8 h-8 rounded-full bg-emerald-600 text-white font-black text-sm flex items-center justify-center">২</span>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">ডেলিভারি মেথড নির্বাচন</h3>
+                        <p class="text-[11px] text-slate-400">আপনার সুবিধানুযায়ী ডেলিভারি স্পিড বাছুন</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label class="flex items-start gap-3 p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50/40 cursor-pointer">
+                        <input type="radio" name="delivery_type" value="Standard" checked onchange="updateDeliverySpeed('Standard')" class="mt-1 text-emerald-600">
+                        <div>
+                            <span class="text-xs font-bold text-slate-800 block">স্ট্যান্ডার্ড হোম ডেলিভারি (Standard)</span>
+                            <span class="text-[11px] text-slate-500 block">ঢাকায় ১-২ দিন, অন্যান্য জেলায় ২-৩ দিন</span>
+                            <span class="text-xs font-bold text-emerald-700 mt-1 block">নরমাল রেট (৳৬০ / ৳১২০)</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 cursor-pointer transition-colors">
+                        <input type="radio" name="delivery_type" value="Express" onchange="updateDeliverySpeed('Express')" class="mt-1 text-emerald-600">
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs font-bold text-slate-800 block">এক্সপ্রেস ফাস্ট ডেলিভারি (২৪ ঘণ্টা)</span>
+                                <span class="px-1.5 py-0.2 bg-amber-400 text-slate-900 text-[9px] font-black rounded">জরুরি</span>
+                            </div>
+                            <span class="text-[11px] text-slate-500 block">ঢাকায় ২৪ ঘণ্টার মধ্যে দ্রুত ডেলিভারি</span>
+                            <span class="text-xs font-bold text-slate-700 mt-1 block">+৳৬০ অতিরিক্ত</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Step 3: Payment Gateway Selector -->
+            <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-5">
+                <div class="flex items-center gap-3 border-b pb-4">
+                    <span class="w-8 h-8 rounded-full bg-emerald-600 text-white font-black text-sm flex items-center justify-center">৩</span>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">পেমেন্ট মেথড (Payment Gateway)</h3>
+                        <p class="text-[11px] text-slate-400">নিরাপদ গেটওয়ে অথবা ক্যাশ অন ডেলিভারি</p>
+                    </div>
+                </div>
+
+                <!-- Payment Options Radio Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    
+                    <label class="flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-200 hover:border-emerald-500 cursor-pointer text-center transition-all bg-white">
+                        <input type="radio" name="payment_method" value="COD" checked class="mb-1 text-emerald-600">
+                        <span class="text-xs font-bold text-slate-800">ক্যাশ অন ডেলিভারি</span>
+                        <span class="text-[10px] text-slate-400">হাতে পেয়ে টাকা দিন</span>
+                    </label>
+
+                    <label class="flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-200 hover:border-pink-500 cursor-pointer text-center transition-all bg-white">
+                        <input type="radio" name="payment_method" value="bKash" class="mb-1 text-pink-600">
+                        <span class="text-xs font-bold text-pink-600">বিকাশ (bKash)</span>
+                        <span class="text-[10px] text-slate-400">ইনস্ট্যান্ট পে</span>
+                    </label>
+
+                    <label class="flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-200 hover:border-amber-500 cursor-pointer text-center transition-all bg-white">
+                        <input type="radio" name="payment_method" value="Nagad" class="mb-1 text-amber-600">
+                        <span class="text-xs font-bold text-amber-600">নগদ (Nagad)</span>
+                        <span class="text-[10px] text-slate-400">অটো ভেরিফাই</span>
+                    </label>
+
+                    <label class="flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-200 hover:border-purple-500 cursor-pointer text-center transition-all bg-white">
+                        <input type="radio" name="payment_method" value="Rocket" class="mb-1 text-purple-600">
+                        <span class="text-xs font-bold text-purple-700">রকেট (DBBL)</span>
+                        <span class="text-[10px] text-slate-400">ডাচ বাংলা</span>
+                    </label>
+
+                    <label class="flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-200 hover:border-blue-500 cursor-pointer text-center transition-all bg-white">
+                        <input type="radio" name="payment_method" value="Card" class="mb-1 text-blue-600">
+                        <span class="text-xs font-bold text-blue-700">কার্ড (Card)</span>
+                        <span class="text-[10px] text-slate-400">ভিসা / মাস্টারকার্ড</span>
+                    </label>
+
+                </div>
+
+                <!-- Dynamic Payment Method Details Panel -->
+                <div id="payment-method-details" class="pt-2">
+                    <!-- Loaded dynamically by payment.js -->
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Right: Order Items & Pricing Breakdown (1 col) -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sticky top-24 space-y-4">
+                <h3 class="text-base font-bold text-slate-900 border-b pb-3">আপনার অর্ডার সারসংক্ষেপ</h3>
+
+                <!-- Items Preview -->
+                <div id="checkout-items-list" class="divide-y divide-slate-100 max-h-60 overflow-y-auto pr-1 text-xs">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 space-y-2 text-xs">
+                    <div class="flex justify-between text-slate-600">
+                        <span>সাবটোটাল:</span>
+                        <span id="checkout-subtotal" class="font-bold text-slate-800 font-mono">৳০</span>
+                    </div>
+
+                    <div class="flex justify-between text-slate-600">
+                        <span>ডেলিভারি ফি:</span>
+                        <span id="checkout-shipping" class="font-bold text-slate-800 font-mono">৳৬০</span>
+                    </div>
+
+                    <div id="checkout-discount-row" class="hidden flex justify-between text-emerald-600 font-bold">
+                        <span>কুপন ছাড়:</span>
+                        <span id="checkout-discount" class="font-mono">-৳০</span>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-200 flex justify-between items-baseline">
+                        <span class="font-black text-slate-900 text-sm">সর্বমোট পরিশোধযোগ্য:</span>
+                        <span id="checkout-grand-total" class="font-black text-xl text-emerald-700 font-mono">৳০</span>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="button" onclick="handleCheckout(event)" id="submit-order-btn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-bold shadow-xl shadow-emerald-700/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    <span>অর্ডার নিশ্চিত করুন (Confirm Order)</span>
+                </button>
+
+                <p class="text-[11px] text-slate-400 text-center leading-relaxed">
+                    অর্ডার কনফার্ম করার মাধ্যমে আপনি আমাদের <a href="/terms" class="text-emerald-600 underline">শর্তাবলি</a> মেনে নিচ্ছেন।
+                </p>
+            </div>
+        </div>
+
+    </form>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let checkoutShippingBase = 60;
+    let expressExtra = 0;
+    let checkoutCouponCode = null;
+    let checkoutCouponDiscount = 0;
+
+    function initCheckout() {
+        if (!Cart.items || Cart.items.length === 0) {
+            window.location.href = '/cart';
+            return;
+        }
+
+        // Restore coupon if saved in cart
+        try {
+            const savedCoupon = sessionStorage.getItem('bongobazaar_applied_coupon');
+            if (savedCoupon) {
+                const parsed = JSON.parse(savedCoupon);
+                checkoutCouponCode = parsed.code;
+                checkoutCouponDiscount = parsed.discount;
+            }
+        } catch(e) {}
+
+        renderCheckoutItems();
+        PaymentGateway.init(() => {
+            // on success callback
+        });
+        PaymentGateway.updatePaymentView();
+        updateCheckoutTotals();
+    }
+
+    function renderCheckoutItems() {
+        const container = document.getElementById('checkout-items-list');
+        let html = '';
+        Cart.items.forEach(item => {
+            html += `
+            <div class="flex items-center gap-3 py-2.5">
+                <img src="${item.image}" alt="${item.title}" class="w-12 h-12 object-cover rounded-xl border">
+                <div class="flex-1 min-w-0">
+                    <p class="font-bold text-slate-800 truncate">${item.title}</p>
+                    <p class="text-[11px] text-slate-400">${item.quantity} × ৳${item.price.toLocaleString('en-IN')}</p>
+                </div>
+                <span class="font-black text-slate-800 font-mono">৳${(item.price * item.quantity).toLocaleString('en-IN')}</span>
+            </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function onDistrictChange(district) {
+        checkoutShippingBase = district.toLowerCase() === 'dhaka' ? 60 : 120;
+        updateCheckoutTotals();
+    }
+
+    function updateDeliverySpeed(type) {
+        expressExtra = (type === 'Express') ? 60 : 0;
+        updateCheckoutTotals();
+    }
+
+    function updateCheckoutTotals() {
+        const subtotal = Cart.getSubtotal();
+        const shipping = checkoutShippingBase + expressExtra;
+        const total = Math.max(0, subtotal - checkoutCouponDiscount + shipping);
+
+        document.getElementById('checkout-subtotal').textContent = `৳${subtotal.toLocaleString('en-IN')}`;
+        document.getElementById('checkout-shipping').textContent = `৳${shipping.toLocaleString('en-IN')}`;
+        document.getElementById('checkout-grand-total').textContent = `৳${total.toLocaleString('en-IN')}`;
+
+        const discRow = document.getElementById('checkout-discount-row');
+        if (checkoutCouponDiscount > 0) {
+            discRow.classList.remove('hidden');
+            document.getElementById('checkout-discount').textContent = `-৳${checkoutCouponDiscount.toLocaleString('en-IN')}`;
+        } else {
+            discRow.classList.add('hidden');
+        }
+    }
+
+    function fillDemoAddress() {
+        document.getElementById('cust-name').value = 'তানভীর হোসেন';
+        document.getElementById('cust-phone').value = '01712345678';
+        document.getElementById('cust-email').value = 'tanvir@gmail.com';
+        document.getElementById('cust-district').value = 'Dhaka';
+        document.getElementById('cust-thana').value = 'ধানমন্ডি';
+        document.getElementById('cust-address').value = 'হাউজ ১২, রোড ৫, ধানমন্ডি, ঢাকা-১২০৫';
+        showToast('তথ্য পূরণ হয়েছে', 'ডেমো ডেলিভারি তথ্য স্বয়ংক্রিয়ভাবে ইনপুট করা হয়েছে', 'info');
+    }
+
+    function handleCheckout(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        const name = document.getElementById('cust-name').value.trim();
+        const phone = document.getElementById('cust-phone').value.trim();
+        const district = document.getElementById('cust-district').value;
+        const thana = document.getElementById('cust-thana').value.trim();
+        const address = document.getElementById('cust-address').value.trim();
+
+        if (!name) {
+            showToast('নাম প্রয়োজন', 'অনুগ্রহ করে আপনার পূর্ণ নাম লিখুন', 'warning');
+            document.getElementById('cust-name').focus();
+            return;
+        }
+
+        if (!phone || phone.length < 11) {
+            showToast('মোবাইল নম্বর প্রয়োজন', 'অনুগ্রহ করে সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)', 'warning');
+            document.getElementById('cust-phone').focus();
+            return;
+        }
+
+        if (!address) {
+            showToast('ঠিকানা প্রয়োজন', 'অনুগ্রহ করে সম্পূর্ণ ডেলিভারি ঠিকানা লিখুন', 'warning');
+            document.getElementById('cust-address').focus();
+            return;
+        }
+
+        if (!Cart.items || Cart.items.length === 0) {
+            showToast('কার্ট ফাঁকা', 'আপনার কার্টে কোনো পণ্য নেই। শপ থেকে পণ্য নির্বাচন করুন।', 'error');
+            setTimeout(() => window.location.href = '/shop', 1200);
+            return;
+        }
+
+        const btn = document.getElementById('submit-order-btn');
+        btn.disabled = true;
+        btn.innerHTML = `<span class="animate-spin mr-2">&#9696;</span> প্রসেসিং হচ্ছে...`;
+
+        const orderData = {
+            customer_name: name,
+            customer_phone: phone,
+            customer_email: document.getElementById('cust-email').value.trim() || 'guest@bongobazaar.com',
+            shipping_district: district,
+            shipping_thana: thana || district,
+            shipping_address: address,
+            notes: document.getElementById('cust-notes').value.trim(),
+            delivery_type: document.querySelector('input[name="delivery_type"]:checked')?.value || 'Standard',
+            payment_method: (window.PaymentGateway && PaymentGateway.currentMethod) ? PaymentGateway.currentMethod : 'COD',
+            transaction_id: (window.PaymentGateway && PaymentGateway.getTransactionId) ? PaymentGateway.getTransactionId() : 'COD',
+            coupon_code: checkoutCouponCode || '',
+            items: Cart.items
+        };
+
+        fetch('/api/orders/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+        })
+        .then(async res => {
+            let data = null;
+            try {
+                data = await res.json();
+            } catch(e) {
+                data = null;
+            }
+
+            if (res.ok && data && data.success) {
+                Cart.clear();
+                sessionStorage.removeItem('bongobazaar_applied_coupon');
+                showToast('অর্ডার সফল!', 'আপনার অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে', 'success');
+                setTimeout(() => {
+                    window.location.href = `/order-confirmation/${data.order_number}`;
+                }, 600);
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i><span>অর্ডার নিশ্চিত করুন (Confirm Order)</span>`;
+                if (window.lucide) lucide.createIcons();
+                const errMsg = (data && data.message) ? data.message : `অর্ডার প্রসেস করা যায়নি (স্ট্যাটাস: ${res.status})`;
+                showToast('অর্ডার সম্পন্ন হয়নি', errMsg, 'error');
+            }
+        })
+        .catch(err => {
+            console.error('Checkout error:', err);
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i><span>অর্ডার নিশ্চিত করুন (Confirm Order)</span>`;
+            if (window.lucide) lucide.createIcons();
+            showToast('নেটওয়ার্ক ত্রুটি', err.message || 'সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি', 'error');
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initCheckout);
+</script>
+{% endblock %}

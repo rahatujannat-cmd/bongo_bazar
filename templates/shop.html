@@ -1,0 +1,371 @@
+{% extends 'base.html' %}
+
+{% block title %}শপ ও ক্যাটালগ - BongoBazaar{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    
+    <!-- Breadcrumb & Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+            <nav class="flex items-center gap-2 text-xs text-slate-500 mb-2">
+                <a href="/" class="hover:text-emerald-600">হোম</a>
+                <span>/</span>
+                <span class="text-slate-800 font-semibold">শপ ও পণ্য ক্যাটালগ</span>
+            </nav>
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900">সকল পণ্য সমাহার</h1>
+            <p class="text-xs text-slate-500 mt-1">মোট <span id="total-product-count" class="font-bold text-emerald-700">০</span> টি পণ্য পাওয়া গেছে</p>
+        </div>
+
+        <!-- Sorting and Layout controls -->
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+                <label for="sort-select" class="text-xs font-semibold text-slate-600 whitespace-nowrap">সর্ট করুন:</label>
+                <select id="sort-select" onchange="applyFilters()" class="text-xs font-medium bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="default">ফিচার্ড ও জনপ্রিয়</option>
+                    <option value="price_low">মূল্য: কম থেকে বেশি</option>
+                    <option value="price_high">মূল্য: বেশি থেকে কম</option>
+                    <option value="rating">সর্বোচ্চ রেটিং</option>
+                    <option value="newest">নতুন আগমন</option>
+                </select>
+            </div>
+
+            <!-- Mobile Filter Toggle Button -->
+            <button onclick="toggleMobileFilter()" class="lg:hidden px-3.5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="filter" class="w-4 h-4"></i>
+                <span>ফিল্টার</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Active Filters Badges Bar -->
+    <div id="active-filters-bar" class="hidden flex-wrap items-center gap-2 mb-6 p-3 bg-emerald-50/60 border border-emerald-100 rounded-2xl">
+        <span class="text-xs font-bold text-emerald-800">অ্যাক্টিভ ফিল্টার:</span>
+        <div id="active-filter-tags" class="flex flex-wrap gap-2"></div>
+        <button onclick="clearAllFilters()" class="text-xs font-bold text-red-600 hover:text-red-700 ml-auto underline">
+            সকল ফিল্টার মুছুন
+        </button>
+    </div>
+
+    <!-- Main Content Grid (Sidebar + Products) -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        
+        <!-- Sidebar Filters (Desktop & Mobile Drawer) -->
+        <aside id="filter-sidebar" class="hidden lg:block space-y-6">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                
+                <div class="flex items-center justify-between border-b pb-3">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="sliders-horizontal" class="w-4 h-4 text-emerald-600"></i>
+                        <span>ফিল্টার অপশন</span>
+                    </h3>
+                    <button onclick="clearAllFilters()" class="text-[11px] font-semibold text-slate-400 hover:text-red-500">রিসেট</button>
+                </div>
+
+                <!-- Search inside catalog -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">কী-ওয়ার্ড দিয়ে খুঁজুন</label>
+                    <div class="relative">
+                        <input type="text" id="filter-keyword" placeholder="পাঞ্জাবি, তেল, স্যামসাং..." class="w-full text-xs pl-8 pr-3 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2"></i>
+                    </div>
+                </div>
+
+                <!-- Categories -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">ক্যাটাগরি</label>
+                    <div id="category-filter-list" class="space-y-1.5 text-xs text-slate-600 max-h-48 overflow-y-auto pr-1">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- Price Range Filter Slider -->
+                <div>
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
+                        <span>মূল্য পরিসীমা (BDT ৳)</span>
+                        <span id="price-range-display" class="text-emerald-700 font-extrabold font-mono">৳০ - ৳৫০,০০০</span>
+                    </div>
+                    <input type="range" id="price-slider" min="100" max="60000" step="200" value="60000" oninput="onPriceSliderChange(this.value)" class="w-full accent-emerald-600 cursor-pointer">
+                    <div class="flex items-center gap-2 mt-2">
+                        <input type="number" id="min-price-input" placeholder="Min" class="w-1/2 text-xs p-1.5 border rounded-lg font-mono">
+                        <span class="text-slate-400 text-xs">-</span>
+                        <input type="number" id="max-price-input" placeholder="Max" class="w-1/2 text-xs p-1.5 border rounded-lg font-mono">
+                    </div>
+                </div>
+
+                <!-- Brands -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">ব্র্যান্ড</label>
+                    <div id="brand-filter-list" class="space-y-1.5 text-xs text-slate-600 max-h-40 overflow-y-auto pr-1">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- Stock / Special toggles -->
+                <div class="space-y-2 pt-2 border-t text-xs">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="stock-only-checkbox" onchange="applyFilters()" class="rounded text-emerald-600 focus:ring-emerald-500">
+                        <span class="text-slate-700 font-medium">শুধুমাত্র ইন-স্টক পণ্য</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="flash-sale-checkbox" onchange="applyFilters()" class="rounded text-emerald-600 focus:ring-emerald-500">
+                        <span class="text-slate-700 font-medium">ফ্ল্যাশ সেল ডিসকাউন্ট 🔥</span>
+                    </label>
+                </div>
+
+                <button onclick="applyFilters()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition-all">
+                    ফিল্টার প্রয়োগ করুন
+                </button>
+
+            </div>
+        </aside>
+
+        <!-- Product Grid Area -->
+        <main class="lg:col-span-3">
+            
+            <!-- Products Grid Container -->
+            <div id="shop-products-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+                <!-- Dynamically rendered -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="no-products-found" class="hidden text-center py-16 px-4 bg-white rounded-3xl border border-slate-200 shadow-sm">
+                <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto mb-4">
+                    <i data-lucide="package-x" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">কোনো পণ্য খুঁজে পাওয়া যায়নি</h3>
+                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    আপনার সার্চ বা ফিল্টারের সাথে মিলে এমন কোনো পণ্য মেলেনি। ফিল্টার রিসেট করে পুনরায় চেষ্টা করুন।
+                </p>
+                <button onclick="clearAllFilters()" class="mt-4 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow">
+                    সব ফিল্টার রিসেট করুন
+                </button>
+            </div>
+
+        </main>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentCategory = new URLSearchParams(window.location.search).get('category') || 'all';
+    let currentSearch = new URLSearchParams(window.location.search).get('search') || '';
+    let currentFlash = new URLSearchParams(window.location.search).get('flash') || '';
+
+    function onPriceSliderChange(val) {
+        document.getElementById('price-range-display').textContent = `৳০ - ৳${parseInt(val).toLocaleString('en-IN')}`;
+        document.getElementById('max-price-input').value = val;
+    }
+
+    function initFilters() {
+        if (currentSearch) {
+            document.getElementById('filter-keyword').value = currentSearch;
+        }
+        if (currentFlash === '1') {
+            document.getElementById('flash-sale-checkbox').checked = true;
+        }
+
+        // Fetch categories
+        fetch('/api/categories')
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('category-filter-list');
+                let html = `
+                <label class="flex items-center justify-between cursor-pointer py-1">
+                    <div class="flex items-center gap-2">
+                        <input type="radio" name="cat_radio" value="all" ${currentCategory === 'all' ? 'checked' : ''} onchange="onCategorySelect('all')" class="text-emerald-600">
+                        <span>সকল ক্যাটাগরি</span>
+                    </div>
+                </label>
+                `;
+                data.categories.forEach(cat => {
+                    const isChecked = currentCategory === cat.slug;
+                    html += `
+                    <label class="flex items-center justify-between cursor-pointer py-1">
+                        <div class="flex items-center gap-2">
+                            <input type="radio" name="cat_radio" value="${cat.slug}" ${isChecked ? 'checked' : ''} onchange="onCategorySelect('${cat.slug}')" class="text-emerald-600">
+                            <span>${cat.name_bn}</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">${cat.product_count}</span>
+                    </label>
+                    `;
+                });
+                list.innerHTML = html;
+            });
+
+        // Fetch brands
+        fetch('/api/brands')
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('brand-filter-list');
+                let html = `
+                <label class="flex items-center gap-2 cursor-pointer py-0.5">
+                    <input type="radio" name="brand_radio" value="all" checked onchange="applyFilters()" class="text-emerald-600">
+                    <span>সকল ব্র্যান্ড</span>
+                </label>
+                `;
+                data.brands.forEach(b => {
+                    html += `
+                    <label class="flex items-center gap-2 cursor-pointer py-0.5">
+                        <input type="radio" name="brand_radio" value="${b}" onchange="applyFilters()" class="text-emerald-600">
+                        <span>${b}</span>
+                    </label>
+                    `;
+                });
+                list.innerHTML = html;
+            });
+
+        applyFilters();
+    }
+
+    function onCategorySelect(slug) {
+        currentCategory = slug;
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const keyword = document.getElementById('filter-keyword')?.value.trim() || '';
+        const selectedBrandRadio = document.querySelector('input[name="brand_radio"]:checked');
+        const brand = selectedBrandRadio ? selectedBrandRadio.value : 'all';
+        const sort = document.getElementById('sort-select').value;
+        const maxPrice = document.getElementById('max-price-input')?.value || document.getElementById('price-slider')?.value || '';
+        const minPrice = document.getElementById('min-price-input')?.value || '';
+        const inStock = document.getElementById('stock-only-checkbox')?.checked ? 1 : 0;
+        const flashSale = document.getElementById('flash-sale-checkbox')?.checked ? 1 : 0;
+
+        let url = `/api/products?sort=${sort}`;
+        if (keyword) url += `&search=${encodeURIComponent(keyword)}`;
+        if (currentCategory && currentCategory !== 'all') url += `&category=${encodeURIComponent(currentCategory)}`;
+        if (brand && brand !== 'all') url += `&brand=${encodeURIComponent(brand)}`;
+        if (minPrice) url += `&min_price=${minPrice}`;
+        if (maxPrice) url += `&max_price=${maxPrice}`;
+        if (inStock) url += `&in_stock=1`;
+        if (flashSale) url += `&flash=1`;
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                renderProductGrid(data.products || []);
+                document.getElementById('total-product-count').textContent = data.count || 0;
+            });
+    }
+
+    function renderProductGrid(products) {
+        const grid = document.getElementById('shop-products-grid');
+        const noProd = document.getElementById('no-products-found');
+
+        if (!products || products.length === 0) {
+            grid.innerHTML = '';
+            noProd.classList.remove('hidden');
+            return;
+        }
+
+        noProd.classList.add('hidden');
+        let html = '';
+
+        products.forEach(p => {
+            const hasSale = p.sale_price && p.sale_price < p.price;
+            const currentPrice = hasSale ? p.sale_price : p.price;
+            const discountPct = hasSale ? Math.round(((p.price - p.sale_price) / p.price) * 100) : 0;
+
+            html += `
+            <div class="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm product-card flex flex-col">
+                <div class="relative product-image-container aspect-square bg-slate-50">
+                    <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover product-img">
+                    
+                    ${hasSale ? `
+                        <span class="absolute top-2.5 left-2.5 px-2 py-0.5 bg-red-600 text-white text-[10px] font-black rounded-lg shadow">
+                            -${discountPct}%
+                        </span>
+                    ` : ''}
+
+                    <button 
+                        onclick="Wishlist.toggle({id: ${p.id}, title: '${p.title.replace(/'/g, "\\'")}', price: ${currentPrice}, image: '${p.image}'})"
+                        data-wishlist-id="${p.id}"
+                        class="absolute top-2.5 right-2.5 p-2 rounded-full bg-white/90 backdrop-blur-sm text-slate-400 hover:text-red-500 shadow-sm transition-colors"
+                    >
+                        <i data-lucide="heart" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="p-3.5 sm:p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                            <span>${p.brand || 'BongoBazaar'}</span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded ${p.stock > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}">
+                                ${p.stock > 0 ? `স্টক: ${p.stock}` : 'স্টক শেষ'}
+                            </span>
+                        </div>
+                        <a href="/product/${p.id}" class="block font-bold text-xs sm:text-sm text-slate-800 hover:text-emerald-600 line-clamp-2">
+                            ${p.title_bn || p.title}
+                        </a>
+                        <div class="flex items-center gap-1.5 mt-1.5 text-xs text-amber-500">
+                            <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+                            <span class="font-bold text-slate-700">${p.rating}</span>
+                            <span class="text-slate-400">(${p.review_count})</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <div>
+                            <span class="text-sm sm:text-base font-black text-slate-900">৳${currentPrice.toLocaleString('en-IN')}</span>
+                            ${hasSale ? `<span class="text-[11px] text-slate-400 line-through block -mt-1">৳${p.price.toLocaleString('en-IN')}</span>` : ''}
+                        </div>
+
+                        <div class="flex gap-1.5">
+                            <button 
+                                onclick="Cart.addItem({id: ${p.id}, title: '${p.title.replace(/'/g, "\\'")}', price: ${p.price}, sale_price: ${p.sale_price || 0}, image: '${p.image}', stock: ${p.stock}})" 
+                                class="p-2 sm:p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-all"
+                                title="কার্টে যোগ করুন"
+                            >
+                                <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                            </button>
+                            <a 
+                                href="/product/${p.id}" 
+                                class="p-2 sm:p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors"
+                                title="বিস্তারিত দেখুন"
+                            >
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+        });
+
+        grid.innerHTML = html;
+        if (window.lucide) lucide.createIcons();
+        Wishlist.updateHearts();
+    }
+
+    function clearAllFilters() {
+        document.getElementById('filter-keyword').value = '';
+        currentCategory = 'all';
+        const defaultCatRadio = document.querySelector('input[name="cat_radio"][value="all"]');
+        if (defaultCatRadio) defaultCatRadio.checked = true;
+
+        const defaultBrandRadio = document.querySelector('input[name="brand_radio"][value="all"]');
+        if (defaultBrandRadio) defaultBrandRadio.checked = true;
+
+        document.getElementById('sort-select').value = 'default';
+        document.getElementById('stock-only-checkbox').checked = false;
+        document.getElementById('flash-sale-checkbox').checked = false;
+        document.getElementById('price-slider').value = 60000;
+        document.getElementById('min-price-input').value = '';
+        document.getElementById('max-price-input').value = '';
+        document.getElementById('price-range-display').textContent = '৳০ - ৳৬০,০০০';
+
+        applyFilters();
+    }
+
+    function toggleMobileFilter() {
+        const sidebar = document.getElementById('filter-sidebar');
+        sidebar.classList.toggle('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', initFilters);
+</script>
+{% endblock %}

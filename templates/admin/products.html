@@ -1,0 +1,312 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}প্রোডাক্ট ম্যানেজমেন্ট - BongoBazaar Admin{% endblock %}
+{% block page_title %}প্রোডাক্ট ক্যাটালগ ও ইনভেন্টরি ম্যানেজমেন্ট{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    
+    <!-- Top Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h3 class="text-lg font-black text-slate-800">সকল পণ্য তালিকা</h3>
+            <p class="text-xs text-slate-400">স্টক আপডেট, মূল্য পরিবর্তন ও নতুন পণ্য সংযোজন করুন</p>
+        </div>
+        <button onclick="openAddProductModal()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>নতুন পণ্য যোগ করুন</span>
+        </button>
+    </div>
+
+    <!-- Products Table -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-semibold border-b">
+                    <tr>
+                        <th class="p-4">পণ্য</th>
+                        <th class="p-4">ক্যাটাগরি</th>
+                        <th class="p-4">মূল্য (৳)</th>
+                        <th class="p-4">ডিসকাউন্ট মূল্য</th>
+                        <th class="p-4">ইনভেন্টরি স্টক</th>
+                        <th class="p-4">ব্যাজ</th>
+                        <th class="p-4 text-right">একশন</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-products-tbody" class="divide-y divide-slate-100 font-medium">
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Add / Edit Product Modal -->
+<div id="product-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white rounded-3xl w-full max-w-2xl p-6 sm:p-8 shadow-2xl space-y-5 my-8">
+        <div class="flex items-center justify-between border-b pb-3">
+            <h3 id="modal-product-title" class="font-bold text-slate-900 text-base">নতুন পণ্য যুক্ত করুন</h3>
+            <button onclick="closeProductModal()" class="text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+
+        <form onsubmit="handleProductSave(event)" class="space-y-4 text-xs">
+            <input type="hidden" id="prod-edit-id">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">পণ্যের নাম (English) <span class="text-red-500">*</span></label>
+                    <input type="text" id="prod-title" required placeholder="Aarong Style Cotton Panjabi" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">পণ্যের নাম (বাংলা) <span class="text-red-500">*</span></label>
+                    <input type="text" id="prod-title-bn" required placeholder="আড়ং স্টাইল সুতি পাঞ্জাবি" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">ক্যাটাগরি</label>
+                    <select id="prod-category-id" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="1">Fashion & Clothing (পোশাক)</option>
+                        <option value="2">Electronics & Gadgets (ইলেকট্রনিক্স)</option>
+                        <option value="3">Groceries & Organic (খাঁটি খাদ্য)</option>
+                        <option value="4">Beauty & Cosmetics (রূপচর্চা)</option>
+                        <option value="5">Home & Living (হোম ও কিচেন)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">ব্র্যান্ড</label>
+                    <input type="text" id="prod-brand" placeholder="Aarong / Walton / Kazi" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">SKU কোড</label>
+                    <input type="text" id="prod-sku" placeholder="PAN-001" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500 uppercase font-mono">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">নিয়মিত মূল্য (Regular Price ৳) <span class="text-red-500">*</span></label>
+                    <input type="number" id="prod-price" required step="1" placeholder="2500" class="w-full p-2.5 border rounded-xl font-mono outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">ডিসকাউন্ট মূল্য (Sale Price ৳)</label>
+                    <input type="number" id="prod-sale-price" step="1" placeholder="1990" class="w-full p-2.5 border rounded-xl font-mono outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">মজুদ স্টক (Stock Qty) <span class="text-red-500">*</span></label>
+                    <input type="number" id="prod-stock" required min="0" value="15" class="w-full p-2.5 border rounded-xl font-mono outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">মূল ছবির URL (Image Link)</label>
+                <input type="url" id="prod-image" placeholder="https://images.unsplash.com/..." class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">উপলব্ধ কালার (কমা দিয়ে লিখুন)</label>
+                    <input type="text" id="prod-colors" placeholder="Navy Blue, Maroon, Black" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">উপলব্ধ সাইজ (কমা দিয়ে লিখুন)</label>
+                    <input type="text" id="prod-sizes" placeholder="M (38), L (40), XL (42)" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">পণ্যের বিবরণ (বাংলায়)</label>
+                <textarea id="prod-desc-bn" rows="2" placeholder="পণ্যের খাঁটি গুণাবলী ও ব্যবহারের সুবিধা..." class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+            </div>
+
+            <div class="flex items-center gap-6 pt-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="prod-is-featured" class="rounded text-purple-600 focus:ring-purple-500">
+                    <span class="font-bold text-slate-700">ফিচার্ড প্রোডাক্ট হিসেবে দেখান</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="prod-is-flash" class="rounded text-purple-600 focus:ring-purple-500">
+                    <span class="font-bold text-orange-600">আজকের ফ্ল্যাশ সেল অফার 🔥</span>
+                </label>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t">
+                <button type="button" onclick="closeProductModal()" class="px-5 py-2.5 border rounded-xl text-slate-600 hover:bg-slate-50 font-bold">
+                    বাতিল
+                </button>
+                <button type="submit" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold shadow transition-all">
+                    সংরক্ষণ করুন
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let adminProductsList = [];
+
+    function loadAdminProducts() {
+        fetch('/api/admin/products')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) return;
+                adminProductsList = data.products;
+                const tbody = document.getElementById('admin-products-tbody');
+
+                let html = '';
+                adminProductsList.forEach(p => {
+                    const isLowStock = p.stock < 10;
+                    html += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4 flex items-center gap-3">
+                            <img src="${p.image}" class="w-12 h-12 object-cover rounded-xl border">
+                            <div>
+                                <h5 class="font-bold text-slate-900">${p.title}</h5>
+                                <span class="text-[11px] text-slate-400 font-mono">SKU: ${p.sku || 'N/A'}</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-slate-600">${p.category_name}</td>
+                        <td class="p-4 font-mono font-bold text-slate-900">৳${p.price.toLocaleString('en-IN')}</td>
+                        <td class="p-4 font-mono font-bold ${p.sale_price ? 'text-red-600' : 'text-slate-400'}">
+                            ${p.sale_price ? `৳${p.sale_price.toLocaleString('en-IN')}` : '-'}
+                        </td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black ${isLowStock ? 'bg-red-100 text-red-700 animate-pulse' : 'bg-emerald-100 text-emerald-800'}">
+                                ${p.stock} টি অবশিষ্ট
+                            </span>
+                        </td>
+                        <td class="p-4 space-x-1">
+                            ${p.is_featured ? '<span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[9px] font-bold">Featured</span>' : ''}
+                            ${p.is_flash_sale ? '<span class="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded text-[9px] font-bold">Flash</span>' : ''}
+                        </td>
+                        <td class="p-4 text-right space-x-2">
+                            <a href="/product/${p.id}" target="_blank" class="p-1.5 text-slate-400 hover:text-slate-700" title="দেখুন">
+                                <i data-lucide="eye" class="w-4 h-4 inline"></i>
+                            </a>
+                            <button onclick="editProduct(${p.id})" class="p-1.5 text-slate-400 hover:text-purple-600" title="এডিট">
+                                <i data-lucide="edit" class="w-4 h-4 inline"></i>
+                            </button>
+                            <button onclick="deleteProduct(${p.id})" class="p-1.5 text-slate-400 hover:text-red-600" title="মুছে ফেলুন">
+                                <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+                if (window.lucide) lucide.createIcons();
+            });
+    }
+
+    function openAddProductModal() {
+        document.getElementById('modal-product-title').textContent = 'নতুন পণ্য যুক্ত করুন';
+        document.getElementById('prod-edit-id').value = '';
+        document.getElementById('prod-title').value = '';
+        document.getElementById('prod-title-bn').value = '';
+        document.getElementById('prod-brand').value = '';
+        document.getElementById('prod-sku').value = '';
+        document.getElementById('prod-price').value = '';
+        document.getElementById('prod-sale-price').value = '';
+        document.getElementById('prod-stock').value = 15;
+        document.getElementById('prod-image').value = '';
+        document.getElementById('prod-colors').value = 'Default';
+        document.getElementById('prod-sizes').value = 'Standard';
+        document.getElementById('prod-desc-bn').value = '';
+        document.getElementById('prod-is-featured').checked = false;
+        document.getElementById('prod-is-flash').checked = false;
+
+        document.getElementById('product-modal').classList.remove('hidden');
+    }
+
+    function closeProductModal() {
+        document.getElementById('product-modal').classList.add('hidden');
+    }
+
+    function editProduct(id) {
+        const p = adminProductsList.find(x => x.id === id);
+        if (!p) return;
+
+        document.getElementById('modal-product-title').textContent = 'পণ্য তথ্য এডিট করুন';
+        document.getElementById('prod-edit-id').value = p.id;
+        document.getElementById('prod-title').value = p.title;
+        document.getElementById('prod-title-bn').value = p.title_bn || p.title;
+        document.getElementById('prod-brand').value = p.brand || '';
+        document.getElementById('prod-sku').value = p.sku || '';
+        document.getElementById('prod-price').value = p.price;
+        document.getElementById('prod-sale-price').value = p.sale_price || '';
+        document.getElementById('prod-stock').value = p.stock;
+        document.getElementById('prod-image').value = p.image || '';
+        document.getElementById('prod-desc-bn').value = p.description_bn || p.description;
+        document.getElementById('prod-is-featured').checked = p.is_featured === 1;
+        document.getElementById('prod-is-flash').checked = p.is_flash_sale === 1;
+
+        document.getElementById('product-modal').classList.remove('hidden');
+    }
+
+    function handleProductSave(e) {
+        e.preventDefault();
+        const editId = document.getElementById('prod-edit-id').value;
+        const colors = document.getElementById('prod-colors').value.split(',').map(s => s.trim()).filter(Boolean);
+        const sizes = document.getElementById('prod-sizes').value.split(',').map(s => s.trim()).filter(Boolean);
+
+        const payload = {
+            title: document.getElementById('prod-title').value.trim(),
+            title_bn: document.getElementById('prod-title-bn').value.trim(),
+            category_id: parseInt(document.getElementById('prod-category-id').value),
+            brand: document.getElementById('prod-brand').value.trim(),
+            sku: document.getElementById('prod-sku').value.trim(),
+            price: parseFloat(document.getElementById('prod-price').value),
+            sale_price: document.getElementById('prod-sale-price').value ? parseFloat(document.getElementById('prod-sale-price').value) : null,
+            stock: parseInt(document.getElementById('prod-stock').value),
+            image: document.getElementById('prod-image').value.trim(),
+            colors: colors,
+            sizes: sizes,
+            description: document.getElementById('prod-desc-bn').value.trim(),
+            description_bn: document.getElementById('prod-desc-bn').value.trim(),
+            is_featured: document.getElementById('prod-is-featured').checked,
+            is_flash_sale: document.getElementById('prod-is-flash').checked
+        };
+
+        const method = editId ? 'PUT' : 'POST';
+        const url = editId ? `/api/admin/products/${editId}` : '/api/admin/products';
+
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                showToast('সফল!', res.message, 'success');
+                closeProductModal();
+                loadAdminProducts();
+            } else {
+                showToast('ত্রুটি', res.message, 'error');
+            }
+        });
+    }
+
+    function deleteProduct(id) {
+        if (!confirm('আপনি কি নিশ্চিতভাবে এই পণ্যটি মুছে ফেলতে চান?')) return;
+
+        fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    showToast('মুছে ফেলা হয়েছে', res.message, 'info');
+                    loadAdminProducts();
+                } else {
+                    showToast('ত্রুটি', res.message, 'error');
+                }
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAdminProducts);
+</script>
+{% endblock %}

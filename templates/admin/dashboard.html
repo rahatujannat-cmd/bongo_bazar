@@ -1,0 +1,396 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}ড্যাশবোর্ড অ্যানালিটিক্স - BongoBazaar Admin{% endblock %}
+{% block page_title %}অ্যানালিটিক্স ড্যাশবোর্ড ও ওভারভিউ{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    
+    <!-- Top 4 Analytics Metric Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        <!-- Total Sales -->
+        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div class="space-y-1">
+                <span class="text-xs text-slate-400 font-semibold uppercase">সর্বমোট বিক্রি (Revenue)</span>
+                <h3 id="stat-total-sales" class="text-2xl font-black text-slate-900 font-mono">৳০</h3>
+                <span class="text-[11px] text-emerald-600 font-bold">&uarr; +১২.৫% এই মাসে বৃদ্ধি</span>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <i data-lucide="banknote" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- Total Orders -->
+        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div class="space-y-1">
+                <span class="text-xs text-slate-400 font-semibold uppercase">মোট অর্ডার</span>
+                <h3 id="stat-total-orders" class="text-2xl font-black text-slate-900 font-mono">০</h3>
+                <span class="text-[11px] text-slate-500 font-semibold">আজকে: <strong id="stat-today-orders" class="text-purple-600">০</strong> টি</span>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- Pending Orders -->
+        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div class="space-y-1">
+                <span class="text-xs text-slate-400 font-semibold uppercase">পেন্ডিং অর্ডার (Processing)</span>
+                <h3 id="stat-pending-orders" class="text-2xl font-black text-amber-600 font-mono">০</h3>
+                <span class="text-[11px] text-amber-600 font-semibold">দ্রুত শিপমেন্ট প্রয়োজন</span>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <i data-lucide="clock" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- Low Stock Alerts -->
+        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div class="space-y-1">
+                <span class="text-xs text-slate-400 font-semibold uppercase">স্টক অ্যালার্ট (<১০ টি)</span>
+                <h3 id="stat-low-stock" class="text-2xl font-black text-red-600 font-mono">০</h3>
+                <a href="/admin/products" class="text-[11px] text-red-600 underline font-semibold">স্টক পূরণ করুন &rarr;</a>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Middle Grid: Revenue Trend Chart + Top Products -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Sales Chart (2 cols) -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b pb-3">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm">মাসিক বিক্রয় প্রবৃদ্ধি (Sales Trend BDT ৳)</h3>
+                    <p class="text-xs text-slate-400">গত ৭ মাসের মোট বিক্রয় পরিসংখ্যান</p>
+                </div>
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                    ২০২৬ অডিট
+                </span>
+            </div>
+            <div class="h-64">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Top Selling Products (1 col) -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <div class="border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-sm">সর্বাধিক বিক্রিত পণ্য</h3>
+                <p class="text-xs text-slate-400">গ্রাহকদের সর্বোচ্চ অর্ডারের ভিত্তিতে</p>
+            </div>
+            <div id="top-products-list" class="divide-y divide-slate-100 space-y-2">
+                <!-- Dynamically filled -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Recent Orders Table -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+            <div>
+                <h3 class="font-bold text-slate-800 text-sm">সাম্প্রতিক অর্ডারসমূহ (Recent Orders)</h3>
+                <p class="text-xs text-slate-400">সর্বশেষ গ্রাহকদের অর্ডার ও ডেলিভারি স্ট্যাটাস</p>
+            </div>
+            <a href="/admin/orders" class="text-xs font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1">
+                সকল অর্ডার দেখুন &rarr;
+            </a>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-semibold border-b">
+                    <tr>
+                        <th class="p-4">অর্ডার নং</th>
+                        <th class="p-4">গ্রাহক</th>
+                        <th class="p-4">জেলা</th>
+                        <th class="p-4">পেমেন্ট</th>
+                        <th class="p-4">সর্বমোট</th>
+                        <th class="p-4">স্ট্যাটাস</th>
+                        <th class="p-4 text-right">একশন</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-orders-tbody" class="divide-y divide-slate-100 font-medium">
+                    <!-- Loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Milestone Dispatch & Tracking Modal -->
+<div id="milestone-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl w-full max-w-xl p-6 sm:p-8 shadow-2xl space-y-6">
+        <div class="flex items-center justify-between border-b pb-4">
+            <div>
+                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <i data-lucide="truck" class="w-5 h-5 text-purple-600"></i>
+                    <span>অর্ডার প্রসেসিং ও ডেলিভারি মাইলস্টোন কন্ট্রোলার</span>
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">অর্ডার নম্বর: <span id="modal-order-number" class="font-mono font-bold text-purple-700"></span></p>
+            </div>
+            <button onclick="closeMilestoneModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+        </div>
+
+        <!-- Customer Summary -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+            <p class="text-slate-700">গ্রাহক: <strong id="modal-customer-name" class="text-slate-900"></strong> (<span id="modal-customer-phone" class="font-mono"></span>)</p>
+            <p class="text-slate-600">ডেলিভারি ঠিকানা: <span id="modal-shipping-address"></span></p>
+        </div>
+
+        <!-- 4 Action Milestone Buttons -->
+        <div class="space-y-3">
+            <label class="block text-xs font-bold text-slate-700">অগ্রগতি পরিবর্তন করুন (গ্রাহকের ট্র্যাকিং পেজে স্বয়ংক্রিয়ভাবে লাইভ হবে):</label>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button type="button" onclick="setQuickStatus('Processing')" class="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-amber-300 bg-amber-50/60 hover:bg-amber-100 text-amber-900 text-left transition-all">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold flex-shrink-0 shadow-sm">
+                        <i data-lucide="package" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-black block">২. প্যাকিং ও প্রসেসিং</span>
+                        <span class="text-[10px] text-amber-700 block">প্যাকিং চলছে</span>
+                    </div>
+                </button>
+
+                <button type="button" onclick="setQuickStatus('Shipped')" class="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-sky-300 bg-sky-50/60 hover:bg-sky-100 text-sky-900 text-left transition-all">
+                    <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold flex-shrink-0 shadow-sm">
+                        <i data-lucide="truck" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-black block">৩. ডেলিভারিতে বের হয়েছে</span>
+                        <span class="text-[10px] text-sky-700 block">কুরিয়ারে হস্তান্তর সম্পন্ন</span>
+                    </div>
+                </button>
+
+                <button type="button" onclick="setQuickStatus('Delivered')" class="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-emerald-300 bg-emerald-50/60 hover:bg-emerald-100 text-emerald-900 text-left transition-all">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold flex-shrink-0 shadow-sm">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-black block">৪. ডেলিভারি সম্পন্ন</span>
+                        <span class="text-[10px] text-emerald-700 block">গ্রাহক পার্সেল পেয়েছেন</span>
+                    </div>
+                </button>
+
+                <button type="button" onclick="setQuickStatus('Pending')" class="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-left transition-all">
+                    <div class="w-10 h-10 rounded-xl bg-slate-600 text-white flex items-center justify-center font-bold flex-shrink-0 shadow-sm">
+                        <i data-lucide="clock" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-black block">১. পেন্ডিং</span>
+                        <span class="text-[10px] text-slate-500 block">অর্ডার গৃহীত হয়েছে</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Courier Tracking Note -->
+        <div class="space-y-1.5 text-xs">
+            <label class="block font-bold text-slate-700">কুরিয়ার বা শিপিং নোট (গ্রাহক ট্র্যাকিং পেজে দেখতে পাবেন):</label>
+            <input type="text" id="modal-tracking-notes" placeholder="যেমন: Steadfast ট্র্যাকিং নং: ST-84910, ডেলিভারিম্যান মো: রফিক (01700-112233)" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500 bg-white">
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="flex items-center justify-between pt-4 border-t text-xs">
+            <a id="modal-customer-view-link" href="#" target="_blank" class="text-emerald-700 hover:text-emerald-800 font-bold underline flex items-center gap-1">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+                <span>গ্রাহকের চোখে লাইভ ট্র্যাকিং পেজ দেখুন &rarr;</span>
+            </a>
+            
+            <button type="button" onclick="closeMilestoneModal()" class="px-5 py-2.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-colors">
+                বন্ধ করুন
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let salesChartInstance = null;
+
+    function loadAdminDashboard() {
+        fetch('/api/admin/stats')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) return;
+
+                const s = data.stats;
+                document.getElementById('stat-total-sales').textContent = `৳${s.total_sales.toLocaleString('en-IN')}`;
+                document.getElementById('stat-total-orders').textContent = s.total_orders;
+                document.getElementById('stat-today-orders').textContent = s.today_orders;
+                document.getElementById('stat-pending-orders').textContent = s.pending_orders;
+                document.getElementById('stat-low-stock').textContent = s.low_stock;
+
+                // Render Chart
+                renderSalesChart(data.chart.labels, data.chart.data);
+
+                // Render Top Products
+                let topHtml = '';
+                data.top_products.forEach(p => {
+                    const price = p.sale_price || p.price;
+                    topHtml += `
+                    <div class="flex items-center gap-3 py-2">
+                        <img src="${p.image}" class="w-10 h-10 object-cover rounded-xl border">
+                        <div class="flex-1 min-w-0">
+                            <h5 class="font-bold text-slate-800 truncate text-xs">${p.title}</h5>
+                            <span class="text-[11px] text-slate-400">স্টক: ${p.stock} টি</span>
+                        </div>
+                        <span class="font-bold text-emerald-700 font-mono text-xs">৳${price.toLocaleString('en-IN')}</span>
+                    </div>
+                    `;
+                });
+                document.getElementById('top-products-list').innerHTML = topHtml;
+
+                // Render Recent Orders Table
+                let orderRows = '';
+                adminRecentOrdersList = data.recent_orders || [];
+                adminRecentOrdersList.forEach(o => {
+                    let pillClass = 'bg-slate-100 text-slate-700';
+                    let statusBn = 'পেন্ডিং';
+                    if (o.order_status === 'Delivered') { pillClass = 'bg-emerald-100 text-emerald-800'; statusBn = '৪. ডেলিভারি সম্পন্ন'; }
+                    if (o.order_status === 'Shipped') { pillClass = 'bg-sky-100 text-sky-800'; statusBn = '৩. ডেলিভারিতে বের হয়েছে'; }
+                    if (o.order_status === 'Processing') { pillClass = 'bg-amber-100 text-amber-800'; statusBn = '২. প্যাকিং ও প্রসেসিং'; }
+                    if (o.order_status === 'Cancelled') { pillClass = 'bg-red-100 text-red-800'; statusBn = 'বাতিল'; }
+                    if (o.order_status === 'Pending') { pillClass = 'bg-purple-100 text-purple-800'; statusBn = '১. পেন্ডিং'; }
+
+                    orderRows += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4 font-mono font-bold text-purple-700">${o.order_number}</td>
+                        <td class="p-4">
+                            <div class="font-bold text-slate-800">${o.customer_name}</div>
+                            <div class="text-[11px] text-slate-400 font-mono">${o.customer_phone}</div>
+                        </td>
+                        <td class="p-4 text-slate-600">${o.shipping_district}</td>
+                        <td class="p-4">
+                            <span class="font-semibold">${o.payment_method}</span>
+                            <span class="block text-[10px] text-slate-400">(${o.payment_status})</span>
+                        </td>
+                        <td class="p-4 font-bold font-mono text-slate-800">৳${o.total_amount.toLocaleString('en-IN')}</td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${pillClass}">
+                                ${statusBn}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right space-x-1 whitespace-nowrap">
+                            <button onclick="openMilestoneModal(${o.id})" class="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm inline-flex items-center gap-1">
+                                <i data-lucide="truck" class="w-3.5 h-3.5"></i>
+                                <span>মাইলস্টোন</span>
+                            </button>
+                            <a href="/admin/invoice/${o.order_number}" target="_blank" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+                                চালান
+                            </a>
+                        </td>
+                    </tr>
+                    `;
+                });
+                document.getElementById('recent-orders-tbody').innerHTML = orderRows;
+                if (window.lucide) lucide.createIcons();
+            });
+    }
+
+    let adminRecentOrdersList = [];
+    let activeModalOrderId = null;
+
+    function openMilestoneModal(orderId) {
+        const order = adminRecentOrdersList.find(o => o.id === orderId);
+        if (!order) return;
+
+        activeModalOrderId = orderId;
+        document.getElementById('modal-order-number').textContent = order.order_number;
+        document.getElementById('modal-customer-name').textContent = order.customer_name;
+        document.getElementById('modal-customer-phone').textContent = order.customer_phone;
+        document.getElementById('modal-shipping-address').textContent = `${order.shipping_address}, ${order.shipping_district}`;
+        document.getElementById('modal-tracking-notes').value = order.notes || '';
+        document.getElementById('modal-customer-view-link').href = `/track?order_no=${order.order_number}`;
+
+        document.getElementById('milestone-modal').classList.remove('hidden');
+    }
+
+    function closeMilestoneModal() {
+        document.getElementById('milestone-modal').classList.add('hidden');
+        activeModalOrderId = null;
+    }
+
+    function setQuickStatus(status) {
+        if (!activeModalOrderId) return;
+        const notes = document.getElementById('modal-tracking-notes').value.trim();
+        updateOrderStatus(activeModalOrderId, status, notes);
+    }
+
+    function updateOrderStatus(orderId, newStatus, customNotes = null) {
+        const payload = { status: newStatus };
+        if (customNotes !== null) {
+            payload.notes = customNotes;
+        }
+
+        fetch(`/api/admin/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                showToast('মাইলস্টোন আপডেট সফল!', `স্ট্যাটাস পরিবর্তিত হয়েছে: ${newStatus}`, 'success');
+                closeMilestoneModal();
+                loadAdminDashboard();
+            } else {
+                showToast('ত্রুটি', res.message, 'error');
+            }
+        });
+    }
+
+    function renderSalesChart(labels, data) {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        if (salesChartInstance) salesChartInstance.destroy();
+
+        salesChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'মোট বিক্রি (BDT ৳)',
+                    data: data,
+                    borderColor: '#0284c7',
+                    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                    tension: 0.35,
+                    fill: true,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#0284c7',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(val) { return '৳' + val.toLocaleString('en-IN'); },
+                            font: { size: 10 }
+                        }
+                    },
+                    x: {
+                        ticks: { font: { size: 10 } }
+                    }
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAdminDashboard);
+</script>
+{% endblock %}

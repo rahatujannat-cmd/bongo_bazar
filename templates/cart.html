@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}শপিং কার্ট - BongoBazaar{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 mb-6">আমার শপিং কার্ট</h1>
+
+    <div id="cart-page-content" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Cart Items Table (Left 2 cols) -->
+        <div class="lg:col-span-2 space-y-4">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-700">
+                    <span>নির্বাচিত পণ্যসমূহ</span>
+                    <button onclick="Cart.clear(); renderCartPage();" class="text-red-500 hover:text-red-700">কার্ট খালি করুন</button>
+                </div>
+
+                <div id="cart-page-items-list" class="divide-y divide-slate-100 p-4 sm:p-6">
+                    <!-- Loaded dynamically by JS -->
+                </div>
+            </div>
+
+            <!-- Trust Features in Cart -->
+            <div class="grid grid-cols-3 gap-3 text-center text-xs text-slate-500 py-3">
+                <div class="flex flex-col items-center gap-1 p-3 bg-white rounded-2xl border border-slate-200">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-emerald-600"></i>
+                    <span class="font-bold text-slate-800">নিরাপদ পেমেন্ট</span>
+                    <span class="text-[10px]">২৫৬-বিট এনক্রিপশন</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 p-3 bg-white rounded-2xl border border-slate-200">
+                    <i data-lucide="refresh-cw" class="w-5 h-5 text-emerald-600"></i>
+                    <span class="font-bold text-slate-800">সহজ রিটার্ন</span>
+                    <span class="text-[10px]">৭ দিনের মানিব্যাক</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 p-3 bg-white rounded-2xl border border-slate-200">
+                    <i data-lucide="truck" class="w-5 h-5 text-emerald-600"></i>
+                    <span class="font-bold text-slate-800">দ্রুত ডেলিভারি</span>
+                    <span class="text-[10px]">সারা বাংলাদেশে</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary & Coupon (Right 1 col) -->
+        <div class="space-y-6">
+            
+            <!-- Order Summary Card -->
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
+                <h3 class="text-base font-bold text-slate-900 border-b pb-3">অর্ডার সারাংশ</h3>
+
+                <div class="space-y-2.5 text-xs sm:text-sm">
+                    <div class="flex justify-between text-slate-600">
+                        <span>পণ্যের সাবটোটাল:</span>
+                        <span id="summary-subtotal" class="font-bold text-slate-800 font-mono">৳০</span>
+                    </div>
+
+                    <div class="flex justify-between text-slate-600">
+                        <span>ডেলিভারি চার্জ:</span>
+                        <span id="summary-shipping" class="font-bold text-slate-800 font-mono">৳৬০</span>
+                    </div>
+
+                    <div id="summary-discount-row" class="hidden flex justify-between text-emerald-600 font-bold">
+                        <span>কুপন ছাড় (<span id="summary-coupon-name"></span>):</span>
+                        <span id="summary-discount" class="font-mono">-৳০</span>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-200 flex justify-between items-baseline">
+                        <span class="font-black text-slate-900 text-base">সর্বমোট প্রদেয়:</span>
+                        <span id="summary-grand-total" class="font-black text-xl text-emerald-700 font-mono">৳০</span>
+                    </div>
+                </div>
+
+                <!-- Delivery Location Selector -->
+                <div class="pt-2">
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">ডেলিভারি এলাকা নির্বাচন করুন:</label>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <label class="flex items-center gap-2 p-2 border rounded-xl cursor-pointer hover:bg-slate-50">
+                            <input type="radio" name="shipping_loc" value="dhaka" checked onchange="updateShipping(60)" class="text-emerald-600">
+                            <span>ঢাকার ভেতরে (৳৬০)</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 border rounded-xl cursor-pointer hover:bg-slate-50">
+                            <input type="radio" name="shipping_loc" value="outside" onchange="updateShipping(120)" class="text-emerald-600">
+                            <span>ঢাকার বাইরে (৳১২০)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <a href="/checkout" class="block w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-center text-xs sm:text-sm font-bold rounded-2xl shadow-lg shadow-emerald-700/20 transition-all">
+                    চেকআউট ধাপে যান &rarr;
+                </a>
+                
+                <a href="/shop" class="block text-center text-xs font-semibold text-slate-500 hover:text-emerald-600">
+                    &larr; আরও পণ্য কেনাকাটা করুন
+                </a>
+            </div>
+
+            <!-- Coupon Input Card -->
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+                <h4 class="text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="tag" class="w-4 h-4 text-emerald-600"></i>
+                    <span>ডিসকাউন্ট কুপন কোড দিন</span>
+                </h4>
+                <div class="flex gap-2">
+                    <input type="text" id="coupon-code-input" placeholder="যেমন: EID20" class="flex-1 uppercase font-mono px-3 py-2 text-xs border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+                    <button type="button" onclick="applyCouponCode()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors">
+                        প্রয়োগ
+                    </button>
+                </div>
+                <div class="mt-3 text-[11px] text-slate-500">
+                    <p class="font-semibold text-emerald-700">উপলব্ধ কুপন সমূহ:</p>
+                    <div class="flex flex-wrap gap-1 mt-1">
+                        <button onclick="document.getElementById('coupon-code-input').value='EID20'; applyCouponCode();" class="px-2 py-0.5 bg-emerald-50 text-emerald-800 rounded border border-emerald-200 font-mono">EID20 (20% Off)</button>
+                        <button onclick="document.getElementById('coupon-code-input').value='BONGO100'; applyCouponCode();" class="px-2 py-0.5 bg-slate-50 text-slate-800 rounded border border-slate-200 font-mono">BONGO100 (৳100 Off)</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Empty State -->
+    <div id="cart-page-empty" class="hidden text-center py-20 px-4 bg-white rounded-3xl border border-slate-200 shadow-sm">
+        <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto mb-4">
+            <i data-lucide="shopping-bag" class="w-10 h-10"></i>
+        </div>
+        <h2 class="text-xl font-bold text-slate-800">আপনার কার্ট বর্তমানে ফাঁকা!</h2>
+        <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            আপনার পছন্দের পোশাক, অর্গানিক খাদ্যপণ্য বা ইলেকট্রনিক্স সামগ্রী কার্টে যোগ করে কেনাকাটা শুরু করুন।
+        </p>
+        <a href="/shop" class="inline-block mt-6 px-7 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold shadow-md transition-all">
+            শপিং করুন &rarr;
+        </a>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let shippingFee = 60;
+    let couponDiscount = 0;
+    let appliedCoupon = null;
+
+    function renderCartPage() {
+        const container = document.getElementById('cart-page-items-list');
+        const emptyState = document.getElementById('cart-page-empty');
+        const contentGrid = document.getElementById('cart-page-content');
+
+        if (!Cart.items || Cart.items.length === 0) {
+            contentGrid.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            return;
+        }
+
+        contentGrid.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+
+        let html = '';
+        Cart.items.forEach((item, index) => {
+            html += `
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
+                <div class="flex items-center gap-4">
+                    <img src="${item.image}" alt="${item.title}" class="w-20 h-20 object-cover rounded-2xl border border-slate-200">
+                    <div>
+                        <a href="/product/${item.id}" class="text-sm font-bold text-slate-800 hover:text-emerald-600 block line-clamp-1">${item.title}</a>
+                        <div class="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                            ${item.color ? `<span>রঙ: <strong>${item.color}</strong></span>` : ''}
+                            ${item.size ? `<span>সাইজ: <strong>${item.size}</strong></span>` : ''}
+                        </div>
+                        <span class="text-xs font-black text-emerald-700 block mt-1">একক মূল্য: ৳${item.price.toLocaleString('en-IN')}</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between sm:justify-end gap-6">
+                    <div class="flex items-center border border-slate-200 rounded-xl bg-white shadow-sm">
+                        <button onclick="Cart.updateQuantity(${index}, -1); renderCartPage();" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold">-</button>
+                        <span class="w-8 text-center text-xs font-bold">${item.quantity}</span>
+                        <button onclick="Cart.updateQuantity(${index}, 1); renderCartPage();" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold">+</button>
+                    </div>
+
+                    <span class="text-sm sm:text-base font-black text-slate-900 min-w-[80px] text-right font-mono">
+                        ৳${(item.price * item.quantity).toLocaleString('en-IN')}
+                    </span>
+
+                    <button onclick="Cart.removeItem(${index}); renderCartPage();" class="text-slate-400 hover:text-red-500 p-1" title="মুছে ফেলুন">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        updateTotals();
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function updateShipping(fee) {
+        shippingFee = fee;
+        updateTotals();
+    }
+
+    function updateTotals() {
+        const subtotal = Cart.getSubtotal();
+        const total = Math.max(0, subtotal - couponDiscount + shippingFee);
+
+        document.getElementById('summary-subtotal').textContent = `৳${subtotal.toLocaleString('en-IN')}`;
+        document.getElementById('summary-shipping').textContent = `৳${shippingFee.toLocaleString('en-IN')}`;
+        document.getElementById('summary-grand-total').textContent = `৳${total.toLocaleString('en-IN')}`;
+
+        const discRow = document.getElementById('summary-discount-row');
+        if (couponDiscount > 0 && appliedCoupon) {
+            discRow.classList.remove('hidden');
+            document.getElementById('summary-coupon-name').textContent = appliedCoupon;
+            document.getElementById('summary-discount').textContent = `-৳${couponDiscount.toLocaleString('en-IN')}`;
+        } else {
+            discRow.classList.add('hidden');
+        }
+    }
+
+    function applyCouponCode() {
+        const code = document.getElementById('coupon-code-input').value.trim().toUpperCase();
+        if (!code) {
+            showToast('কুপন কোড দিন', 'অনুগ্রহ করে কুপন কোড ইনপুট করুন', 'warning');
+            return;
+        }
+
+        const subtotal = Cart.getSubtotal();
+        fetch('/api/coupons/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: code, subtotal: subtotal })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                couponDiscount = data.discount;
+                appliedCoupon = data.code;
+                sessionStorage.setItem('bongobazaar_applied_coupon', JSON.stringify({ code: data.code, discount: data.discount }));
+                showToast('সফল!', data.message, 'success');
+                updateTotals();
+            } else {
+                couponDiscount = 0;
+                appliedCoupon = null;
+                showToast('কুপন ত্রুটি', data.message, 'error');
+                updateTotals();
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderCartPage();
+        window.addEventListener('cart-updated', renderCartPage);
+    });
+</script>
+{% endblock %}

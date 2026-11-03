@@ -1,0 +1,81 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}কাস্টমার ডিরেক্টরি - BongoBazaar Admin{% endblock %}
+{% block page_title %}রেজিস্টার্ড গ্রাহক ও কাস্টমার এনালিটিক্স{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    
+    <div>
+        <h3 class="text-lg font-black text-slate-800">নিবন্ধিত গ্রাহক তালিকা</h3>
+        <p class="text-xs text-slate-400">গ্রাহকদের যোগাযোগের তথ্য, মোট অর্ডার ও খরচের পরিসংখ্যান</p>
+    </div>
+
+    <!-- Customers Table -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-semibold border-b">
+                    <tr>
+                        <th class="p-4">গ্রাহকের নাম ও ইমেইল</th>
+                        <th class="p-4">মোবাইল নম্বর</th>
+                        <th class="p-4">জেলা / এলাকা</th>
+                        <th class="p-4">রেজিস্ট্রেশন তারিখ</th>
+                        <th class="p-4">মোট অর্ডার</th>
+                        <th class="p-4">মোট কেনাকাটা (৳)</th>
+                        <th class="p-4 text-right">স্ট্যাটাস</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-customers-tbody" class="divide-y divide-slate-100 font-medium">
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function loadAdminCustomers() {
+        fetch('/api/admin/customers')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) return;
+                const tbody = document.getElementById('admin-customers-tbody');
+
+                let html = '';
+                data.customers.forEach(c => {
+                    html += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4 flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center">
+                                ${c.name[0]}
+                            </div>
+                            <div>
+                                <h5 class="font-bold text-slate-900">${c.name}</h5>
+                                <span class="text-slate-400 text-[11px]">${c.email}</span>
+                            </div>
+                        </td>
+                        <td class="p-4 font-mono text-slate-700">${c.phone || 'N/A'}</td>
+                        <td class="p-4 text-slate-600">${c.district || 'Dhaka'}</td>
+                        <td class="p-4 text-slate-500">${c.created_at ? c.created_at.substring(0, 10) : '-'}</td>
+                        <td class="p-4 font-bold text-slate-900 font-mono">${c.order_count} টি</td>
+                        <td class="p-4 font-bold font-mono text-emerald-700">৳${c.total_spent.toLocaleString('en-IN')}</td>
+                        <td class="p-4 text-right">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">
+                                Active
+                            </span>
+                        </td>
+                    </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAdminCustomers);
+</script>
+{% endblock %}

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ইনভয়েস - {{ order.order_number }} - BongoBazaar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; padding: 0 !important; }
+            #printable-invoice { border: none !important; box-shadow: none !important; width: 100% !important; margin: 0 !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 p-4 sm:p-10 font-sans text-slate-800">
+
+    <!-- Top Action Bar -->
+    <div class="max-w-3xl mx-auto mb-4 flex items-center justify-between no-print">
+        <a href="javascript:history.back()" class="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1">
+            &larr; ফিরে যান
+        </a>
+        <button onclick="window.print()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2">
+            <span>প্রিন্ট চালান (Print Invoice)</span>
+        </button>
+    </div>
+
+    <!-- Official Invoice Container (A4 Printable) -->
+    <div id="printable-invoice" class="max-w-3xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-xl p-8 sm:p-12 space-y-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="text-2xl font-black text-slate-900">Bongo<span class="text-emerald-600">Bazaar</span></span>
+                    <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">অফিসিয়াল চালান</span>
+                </div>
+                <p class="text-xs text-slate-500">বঙ্গবাজার অনলাইন লিমিটেড</p>
+                <p class="text-xs text-slate-500">হাউজ ১২, রোড ৫, গুলশান-১, ঢাকা-১২১২</p>
+                <p class="text-[11px] text-slate-400 mt-1">ট্রেড লাইসেন্স: TRAD/DNCC/019284 &bull; ভ্যাট রেজি: 00293182-0101</p>
+            </div>
+
+            <div class="text-right sm:text-right">
+                <h1 class="text-2xl font-black text-slate-900 uppercase tracking-widest text-emerald-700">INVOICE</h1>
+                <p class="text-xs text-slate-500 font-mono mt-1">চালান নং: <strong>INV-{{ order.order_number }}</strong></p>
+                <p class="text-xs text-slate-500 font-mono">তারিখ: {{ order.created_at }}</p>
+                <div class="mt-2 inline-block px-3 py-1 rounded-full text-xs font-black uppercase {% if order.payment_status == 'Paid' %}bg-emerald-100 text-emerald-800{% else %}bg-amber-100 text-amber-800{% endif %}">
+                    {{ order.payment_status }} ({{ order.payment_method }})
+                </div>
+            </div>
+        </div>
+
+        <!-- Bill To / Customer Details -->
+        <div class="grid grid-cols-2 gap-6 text-xs">
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
+                <span class="text-[10px] uppercase font-bold text-slate-400 block">গ্রাহকের বিবরণ (Bill To):</span>
+                <p class="font-bold text-slate-900 text-sm">{{ order.customer_name }}</p>
+                <p class="text-slate-600">মোবাইল: <strong class="font-mono">{{ order.customer_phone }}</strong></p>
+                <p class="text-slate-600">ইমেইল: {{ order.customer_email }}</p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
+                <span class="text-[10px] uppercase font-bold text-slate-400 block">ডেলিভারি ঠিকানা (Ship To):</span>
+                <p class="text-slate-700 font-medium">{{ order.shipping_address }}</p>
+                <p class="text-slate-600">{{ order.shipping_thana }}, {{ order.shipping_district }}</p>
+                <p class="text-slate-500 text-[11px]">ডেলিভারি ধরন: <strong>{{ order.delivery_type }}</strong></p>
+            </div>
+        </div>
+
+        <!-- Order Items Table -->
+        <table class="w-full text-xs text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-100 text-slate-700 uppercase font-bold border-y border-slate-200">
+                    <th class="p-3">ক্রমিক</th>
+                    <th class="p-3">পণ্যের বিবরণ</th>
+                    <th class="p-3 text-center">পরিমাণ</th>
+                    <th class="p-3 text-right">একক মূল্য</th>
+                    <th class="p-3 text-right">মোট (৳)</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 font-medium">
+                {% for item in order.items_list %}
+                <tr>
+                    <td class="p-3 text-slate-400">{{ loop.index }}</td>
+                    <td class="p-3">
+                        <span class="font-bold text-slate-800">{{ item.product_title }}</span>
+                        <div class="text-[10px] text-slate-500">
+                            {% if item.color %}রঙ: {{ item.color }} {% endif %}
+                            {% if item.size %}সাইজ: {{ item.size }}{% endif %}
+                        </div>
+                    </td>
+                    <td class="p-3 text-center font-bold">{{ item.quantity }}</td>
+                    <td class="p-3 text-right font-mono">৳{{ '{:,.0f}'.format(item.price) }}</td>
+                    <td class="p-3 text-right font-bold font-mono text-slate-900">৳{{ '{:,.0f}'.format(item.total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Totals Calculation -->
+        <div class="flex justify-end pt-2">
+            <div class="w-full sm:w-64 space-y-2 text-xs">
+                <div class="flex justify-between text-slate-600">
+                    <span>পণ্যের সাবটোটাল:</span>
+                    <span class="font-bold font-mono">৳{{ '{:,.0f}'.format(order.subtotal) }}</span>
+                </div>
+                <div class="flex justify-between text-slate-600">
+                    <span>ডেলিভারি ফি:</span>
+                    <span class="font-bold font-mono">৳{{ '{:,.0f}'.format(order.shipping_fee) }}</span>
+                </div>
+                {% if order.discount and order.discount > 0 %}
+                <div class="flex justify-between text-emerald-700 font-bold">
+                    <span>কুপন ছাড় ({{ order.coupon_code or 'PROMO' }}):</span>
+                    <span class="font-mono">-৳{{ '{:,.0f}'.format(order.discount) }}</span>
+                </div>
+                {% endif %}
+                <div class="pt-2 border-t-2 border-slate-900 flex justify-between font-black text-slate-900 text-sm">
+                    <span>সর্বমোট প্রদেয়:</span>
+                    <span class="text-emerald-700 font-mono text-base">৳{{ '{:,.0f}'.format(order.total_amount) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer / Signature -->
+        <div class="pt-10 border-t border-slate-200 flex justify-between items-end text-xs text-slate-400">
+            <div>
+                <p class="text-slate-700 font-bold">বঙ্গবাজারের সাথে থাকার জন্য ধন্যবাদ!</p>
+                <p class="text-[11px]">যেকোনো জিজ্ঞাসায় হেল্পলাইনে কল করুন: 09612-000000</p>
+                <p class="text-[10px] text-slate-400 mt-1">এটি একটি কম্পিউটার জেনারেটেড ইনভয়েস, কোনো সই প্রয়োজন নেই।</p>
+            </div>
+            <div class="text-center">
+                <div class="w-32 border-b border-slate-400 mb-1"></div>
+                <span class="text-[11px] font-bold text-slate-600">অনুমোদিত স্বাক্ষরকারী</span>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

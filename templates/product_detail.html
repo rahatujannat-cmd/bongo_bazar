@@ -1,0 +1,478 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.title_bn or product.title }} - BongoBazaar{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-xs text-slate-500 mb-6">
+        <a href="/" class="hover:text-emerald-600">হোম</a>
+        <span>/</span>
+        <a href="/shop" class="hover:text-emerald-600">শপ</a>
+        <span>/</span>
+        <a href="/shop?category={{ product.category_id }}" class="hover:text-emerald-600">{{ product.category_name }}</a>
+        <span>/</span>
+        <span class="text-slate-800 font-semibold truncate max-w-xs">{{ product.title_bn or product.title }}</span>
+    </nav>
+
+    <!-- Product Showcase (Gallery + Info) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 bg-white p-6 sm:p-10 rounded-3xl border border-slate-200 shadow-sm mb-12">
+        
+        <!-- Left: Image Gallery -->
+        <div class="space-y-4">
+            <!-- Main Featured Image -->
+            <div class="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 group">
+                <img id="main-product-image" src="{{ product.image }}" alt="{{ product.title }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                
+                {% if product.sale_price and product.price > product.sale_price %}
+                {% set discount_pct = ((product.price - product.sale_price) / product.price * 100) | round | int %}
+                <span class="absolute top-4 left-4 px-3 py-1 bg-red-600 text-white text-xs font-black rounded-xl shadow-lg">
+                    -{{ discount_pct }}% ছাড়
+                </span>
+                {% endif %}
+
+                <button 
+                    onclick="Wishlist.toggle({id: {{ product.id }}, title: '{{ product.title }}', price: {{ product.sale_price or product.price }}, image: '{{ product.image }}'})"
+                    data-wishlist-id="{{ product.id }}"
+                    class="absolute top-4 right-4 p-2.5 rounded-full bg-white/90 backdrop-blur-sm text-slate-400 hover:text-red-500 shadow-md transition-colors"
+                >
+                    <i data-lucide="heart" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Thumbnail Selector -->
+            {% if product.gallery_list and product.gallery_list | length > 1 %}
+            <div class="flex items-center gap-3 overflow-x-auto pb-2">
+                {% for img in product.gallery_list %}
+                <button onclick="document.getElementById('main-product-image').src = '{{ img }}'" class="w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-200 hover:border-emerald-500 transition-all flex-shrink-0">
+                    <img src="{{ img }}" alt="Thumbnail" class="w-full h-full object-cover">
+                </button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right: Product Info & Actions -->
+        <div class="flex flex-col justify-between space-y-6">
+            
+            <div class="space-y-3">
+                <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase">
+                        {{ product.category_name }}
+                    </span>
+                    <span class="text-xs text-slate-400 font-semibold">ব্র্যান্ড: {{ product.brand or 'BongoBazaar' }}</span>
+                </div>
+
+                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 leading-snug">
+                    {{ product.title_bn or product.title }}
+                </h1>
+                <p class="text-xs text-slate-400 font-medium">{{ product.title }}</p>
+
+                <!-- Rating summary -->
+                <div class="flex items-center gap-3 pt-1">
+                    <div class="flex items-center text-amber-400">
+                        {% for i in range(5) %}
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        {% endfor %}
+                    </div>
+                    <span class="text-sm font-bold text-slate-700">{{ product.rating }}</span>
+                    <span class="text-xs text-slate-400">({{ product.review_count }} টি গ্রাহক রিভিউ)</span>
+                    <span class="text-slate-300">|</span>
+                    <span class="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> ১০০% অরিজিনাল
+                    </span>
+                </div>
+
+                <!-- Price block -->
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-baseline gap-3 my-4">
+                    {% set active_price = product.sale_price if product.sale_price else product.price %}
+                    <span class="text-3xl font-black text-emerald-700">৳{{ '{:,.0f}'.format(active_price) }}</span>
+                    {% if product.sale_price %}
+                    <span class="text-base text-slate-400 line-through">৳{{ '{:,.0f}'.format(product.price) }}</span>
+                    <span class="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-md">
+                        সাশ্রয় ৳{{ '{:,.0f}'.format(product.price - product.sale_price) }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Short description -->
+                <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    {{ product.description_bn or product.description }}
+                </p>
+
+                <!-- Color Variation Selector -->
+                {% if product.colors_list and product.colors_list | length > 0 %}
+                <div class="pt-3 border-t border-slate-100">
+                    <label class="block text-xs font-bold text-slate-700 mb-2">
+                        রঙ পছন্দ করুন: <span id="selected-color-label" class="text-emerald-700">{{ product.colors_list[0] }}</span>
+                    </label>
+                    <div class="flex flex-wrap gap-2">
+                        {% for color in product.colors_list %}
+                        <button 
+                            type="button" 
+                            onclick="selectColor('{{ color }}', this)" 
+                            class="color-btn px-3.5 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 hover:border-emerald-600 transition-all {% if loop.first %}bg-emerald-600 text-white border-emerald-600{% else %}bg-white text-slate-700{% endif %}"
+                        >
+                            {{ color }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Size Variation Selector -->
+                {% if product.sizes_list and product.sizes_list | length > 0 %}
+                <div class="pt-3 border-t border-slate-100">
+                    <label class="block text-xs font-bold text-slate-700 mb-2">
+                        সাইজ পছন্দ করুন: <span id="selected-size-label" class="text-emerald-700">{{ product.sizes_list[0] }}</span>
+                    </label>
+                    <div class="flex flex-wrap gap-2">
+                        {% for size in product.sizes_list %}
+                        <button 
+                            type="button" 
+                            onclick="selectSize('{{ size }}', this)" 
+                            class="size-btn px-4 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 hover:border-emerald-600 transition-all {% if loop.first %}bg-emerald-600 text-white border-emerald-600{% else %}bg-white text-slate-700{% endif %}"
+                        >
+                            {{ size }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Stock Urgency -->
+                <div class="pt-2">
+                    {% if product.stock > 0 %}
+                        <div class="flex items-center gap-2 text-xs font-semibold {% if product.stock < 5 %}text-amber-600 animate-pulse{% else %}text-emerald-600{% endif %}">
+                            <i data-lucide="package-check" class="w-4 h-4"></i>
+                            <span>ইন-স্টক (মাত্র {{ product.stock }} টি অবশিষ্ট আছে)</span>
+                        </div>
+                    {% else %}
+                        <div class="flex items-center gap-2 text-xs font-semibold text-red-600">
+                            <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                            <span>স্টক শেষ (Out of Stock)</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            <!-- Actions: Quantity + Add to Cart + Buy Now -->
+            <div class="space-y-4 pt-4 border-t border-slate-100">
+                
+                <div class="flex items-center gap-4">
+                    <span class="text-xs font-bold text-slate-700">পরিমাণ:</span>
+                    <div class="flex items-center border border-slate-300 rounded-xl overflow-hidden bg-white shadow-sm">
+                        <button type="button" onclick="adjustProductQty(-1)" class="w-9 h-9 flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold">-</button>
+                        <input type="number" id="product-detail-qty" value="1" min="1" max="{{ product.stock }}" readonly class="w-12 text-center text-sm font-bold text-slate-800 outline-none">
+                        <button type="button" onclick="adjustProductQty(1)" class="w-9 h-9 flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold">+</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button 
+                        type="button" 
+                        onclick="addToCartFromDetail()" 
+                        class="py-3.5 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs sm:text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                    >
+                        <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                        <span>কার্টে যোগ করুন</span>
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="buyNowFromDetail()" 
+                        class="py-3.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs sm:text-sm font-bold shadow-md shadow-emerald-700/20 transition-all flex items-center justify-center gap-2"
+                    >
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                        <span>সরাসরি কিনুন (Buy Now)</span>
+                    </button>
+                </div>
+
+                <!-- Delivery Guarantees micro-box -->
+                <div class="grid grid-cols-2 gap-3 pt-2 text-[11px] text-slate-500">
+                    <div class="flex items-center gap-2 p-2 rounded-xl bg-slate-50">
+                        <i data-lucide="truck" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+                        <span>ঢাকায় ২৪-৪৮ ঘণ্টা, ঢাকার বাইরে ২-৩ দিন</span>
+                    </div>
+                    <div class="flex items-center gap-2 p-2 rounded-xl bg-slate-50">
+                        <i data-lucide="shield" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+                        <span>৭ দিনে নিশ্চিত রিটার্ন ও রিফান্ড</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Product Details Tabs (Description, Specs, Reviews) -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-12">
+        
+        <!-- Tabs Header -->
+        <div class="flex border-b border-slate-200 bg-slate-50 overflow-x-auto text-xs sm:text-sm font-bold">
+            <button onclick="switchTab('desc')" id="tab-btn-desc" class="py-4 px-6 border-b-2 border-emerald-600 text-emerald-700 bg-white">
+                বিস্তারিত বিবরণ (Description)
+            </button>
+            <button onclick="switchTab('specs')" id="tab-btn-specs" class="py-4 px-6 border-b-2 border-transparent text-slate-500 hover:text-slate-800">
+                স্পেসিফিকেশন (Specifications)
+            </button>
+            <button onclick="switchTab('reviews')" id="tab-btn-reviews" class="py-4 px-6 border-b-2 border-transparent text-slate-500 hover:text-slate-800">
+                গ্রাহক মতামত ও রিভিউ ({{ reviews | length }})
+            </button>
+        </div>
+
+        <div class="p-6 sm:p-8">
+            
+            <!-- Tab: Description -->
+            <div id="tab-content-desc" class="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                <h3 class="font-bold text-slate-900 text-base">পণ্যের পূর্ণ বিবরণ:</h3>
+                <p>{{ product.description_bn or product.description }}</p>
+                <p>{{ product.description }}</p>
+                <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 text-emerald-900 mt-4">
+                    <h4 class="font-bold mb-1">কেন বঙ্গবাজার থেকে কিনবেন?</h4>
+                    <p class="text-xs">বঙ্গবাজারের প্রতিটি পণ্য সরাসরি উৎপাদনকারী অথবা অনুমোদিত পরিবেশক থেকে সংগৃহীত। পণ্যের গুণগত মান আমরা শতভাগ নিশ্চিত করি।</p>
+                </div>
+            </div>
+
+            <!-- Tab: Specs -->
+            <div id="tab-content-specs" class="hidden">
+                <table class="w-full text-xs sm:text-sm text-left border-collapse">
+                    <tbody class="divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-2.5 font-bold text-slate-700 w-1/3">মডেল / SKU:</td>
+                            <td class="py-2.5 text-slate-600 font-mono">{{ product.sku }}</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-2.5 font-bold text-slate-700">ব্র্যান্ড:</td>
+                            <td class="py-2.5 text-slate-600">{{ product.brand or 'BongoBazaar Original' }}</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-2.5 font-bold text-slate-700">ক্যাটাগরি:</td>
+                            <td class="py-2.5 text-slate-600">{{ product.category_name }}</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-2.5 font-bold text-slate-700">উপলব্ধ সাইজ:</td>
+                            <td class="py-2.5 text-slate-600">{{ product.sizes_list | join(', ') if product.sizes_list else 'Standard' }}</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-2.5 font-bold text-slate-700">উপলব্ধ রঙ:</td>
+                            <td class="py-2.5 text-slate-600">{{ product.colors_list | join(', ') if product.colors_list else 'Standard' }}</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-2.5 font-bold text-slate-700">উৎপাদন দেশ:</td>
+                            <td class="py-2.5 text-slate-600 font-semibold text-emerald-700">বাংলাদেশ (Made in Bangladesh)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tab: Reviews -->
+            <div id="tab-content-reviews" class="hidden space-y-8">
+                
+                <!-- Review Form -->
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                    <h4 class="font-bold text-slate-900 text-sm mb-3">আপনার মূল্যবান মতামত বা রিভিউ দিন</h4>
+                    <form id="add-review-form" onsubmit="submitReview(event)" class="space-y-4">
+                        <div class="flex items-center gap-3">
+                            <label class="text-xs font-semibold text-slate-700">আপনার রেটিং:</label>
+                            <div class="flex items-center gap-1" id="star-rating-selector">
+                                {% for i in range(1, 6) %}
+                                <button type="button" onclick="setRating({{ i }})" class="star-btn text-amber-400 p-1" data-rating="{{ i }}">
+                                    <i data-lucide="star" class="w-5 h-5 fill-amber-400"></i>
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <input type="text" id="review-user-name" placeholder="আপনার নাম..." value="{% if g.user %}{{ g.user.name }}{% endif %}" required class="p-2.5 text-xs border rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500">
+                            <input type="text" id="review-image-url" placeholder="ছবির লিংক (ঐচ্ছিক)..." class="p-2.5 text-xs border rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+
+                        <textarea id="review-comment" rows="3" placeholder="পণ্যটি কেমন লেগেছে? কাপড়ের মান বা পারফরম্যান্স সম্পর্কে লিখুন..." required class="w-full p-3 text-xs border rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+
+                        <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow transition-all">
+                            রিভিউ জমা দিন
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Existing Reviews List -->
+                <div class="space-y-4 divide-y divide-slate-100">
+                    {% for rev in reviews %}
+                    <div class="pt-4 first:pt-0 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center">
+                                    {{ rev.user_name[0] }}
+                                </div>
+                                <div>
+                                    <h5 class="text-xs font-bold text-slate-800">{{ rev.user_name }}</h5>
+                                    <span class="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                                        <i data-lucide="check-circle" class="w-3 h-3"></i> ভেরিফাইড ক্রয়কৃত
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex text-amber-400">
+                                {% for r in range(rev.rating) %}
+                                <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-700 leading-relaxed">{{ rev.comment }}</p>
+                    </div>
+                    {% else %}
+                    <p class="text-xs text-slate-400 text-center py-6">এখনো কোনো রিভিউ দেওয়া হয়নি। আপনিই প্রথম রিভিউ দিন!</p>
+                    {% endfor %}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Related Products -->
+    {% if related and related | length > 0 %}
+    <section>
+        <h3 class="text-xl font-black text-slate-900 mb-6">সম্পর্কিত অন্যান্য পণ্য (You May Also Like)</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            {% for p in related %}
+            <div class="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm product-card flex flex-col">
+                <div class="aspect-square bg-slate-50">
+                    <img src="{{ p.image }}" alt="{{ p.title }}" class="w-full h-full object-cover">
+                </div>
+                <div class="p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                        <span class="text-[10px] text-slate-400 uppercase font-bold">{{ p.brand or 'BongoBazaar' }}</span>
+                        <a href="/product/{{ p.id }}" class="block text-xs sm:text-sm font-bold text-slate-800 hover:text-emerald-600 line-clamp-2 mt-1">
+                            {{ p.title_bn or p.title }}
+                        </a>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between">
+                        <span class="font-black text-sm text-slate-900">৳{{ '{:,.0f}'.format(p.sale_price or p.price) }}</span>
+                        <a href="/product/{{ p.id }}" class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-100">
+                            দেখুন
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let selectedRating = 5;
+    let selectedColor = "{{ product.colors_list[0] if product.colors_list else '' }}";
+    let selectedSize = "{{ product.sizes_list[0] if product.sizes_list else '' }}";
+
+    const productData = {
+        id: {{ product.id }},
+        title: "{{ product.title | replace('"', '\\"') }}",
+        price: {{ product.price }},
+        sale_price: {{ product.sale_price or 0 }},
+        image: "{{ product.image }}",
+        stock: {{ product.stock }}
+    };
+
+    function selectColor(color, btn) {
+        selectedColor = color;
+        document.getElementById('selected-color-label').textContent = color;
+        document.querySelectorAll('.color-btn').forEach(b => {
+            b.classList.remove('bg-emerald-600', 'text-white', 'border-emerald-600');
+            b.classList.add('bg-white', 'text-slate-700');
+        });
+        btn.classList.add('bg-emerald-600', 'text-white', 'border-emerald-600');
+    }
+
+    function selectSize(size, btn) {
+        selectedSize = size;
+        document.getElementById('selected-size-label').textContent = size;
+        document.querySelectorAll('.size-btn').forEach(b => {
+            b.classList.remove('bg-emerald-600', 'text-white', 'border-emerald-600');
+            b.classList.add('bg-white', 'text-slate-700');
+        });
+        btn.classList.add('bg-emerald-600', 'text-white', 'border-emerald-600');
+    }
+
+    function adjustProductQty(delta) {
+        const input = document.getElementById('product-detail-qty');
+        let current = parseInt(input.value) || 1;
+        current += delta;
+        if (current < 1) current = 1;
+        if (current > productData.stock) current = productData.stock;
+        input.value = current;
+    }
+
+    function addToCartFromDetail() {
+        const qty = parseInt(document.getElementById('product-detail-qty').value) || 1;
+        Cart.addItem(productData, qty, selectedColor, selectedSize);
+    }
+
+    function buyNowFromDetail() {
+        const qty = parseInt(document.getElementById('product-detail-qty').value) || 1;
+        Cart.addItem(productData, qty, selectedColor, selectedSize);
+        window.location.href = '/checkout';
+    }
+
+    function switchTab(tab) {
+        ['desc', 'specs', 'reviews'].forEach(t => {
+            document.getElementById(`tab-content-${t}`).classList.add('hidden');
+            const btn = document.getElementById(`tab-btn-${t}`);
+            btn.classList.remove('border-emerald-600', 'text-emerald-700', 'bg-white');
+            btn.classList.add('border-transparent', 'text-slate-500');
+        });
+
+        document.getElementById(`tab-content-${tab}`).classList.remove('hidden');
+        const activeBtn = document.getElementById(`tab-btn-${tab}`);
+        activeBtn.classList.add('border-emerald-600', 'text-emerald-700', 'bg-white');
+        activeBtn.classList.remove('border-transparent', 'text-slate-500');
+    }
+
+    function setRating(rating) {
+        selectedRating = rating;
+        document.querySelectorAll('.star-btn').forEach(btn => {
+            const r = parseInt(btn.getAttribute('data-rating'));
+            const icon = btn.querySelector('svg, i');
+            if (icon) {
+                icon.style.fill = (r <= rating) ? '#f59e0b' : 'none';
+            }
+        });
+    }
+
+    function submitReview(e) {
+        e.preventDefault();
+        const comment = document.getElementById('review-comment').value.trim();
+        const userName = document.getElementById('review-user-name').value.trim();
+        const imgUrl = document.getElementById('review-image-url').value.trim();
+
+        fetch('/api/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                product_id: productData.id,
+                rating: selectedRating,
+                comment: comment,
+                user_name: userName,
+                image_url: imgUrl || null
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast('ধন্যবাদ!', data.message, 'success');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                showToast('ত্রুটি', data.message, 'error');
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,137 @@
+/* BongoBazaar Custom E-Commerce Styles */
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --primary: #0284c7;       /* Modern Sky/Emerald combo */
+    --primary-hover: #0369a1;
+    --accent: #f97316;        /* Orange accent for deals & urgency */
+    --bkash: #e2136e;
+    --nagad: #f7941d;
+    --rocket: #8c3494;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', 'Hind Siliguri', sans-serif;
+    color: #1e293b;
+    background-color: #f8fafc;
+    overflow-x: hidden;
+}
+
+.font-bengali {
+    font-family: 'Hind Siliguri', sans-serif;
+}
+
+/* Smooth Transitions */
+* {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+/* Glassmorphism & Cards */
+.glass-nav {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.product-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.1);
+}
+
+.product-image-container {
+    overflow: hidden;
+}
+
+.product-card:hover .product-img {
+    transform: scale(1.06);
+}
+
+.product-img {
+    transition: transform 0.4s ease;
+}
+
+/* Badges */
+.badge-discount {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.badge-bkash {
+    background-color: var(--bkash);
+}
+.badge-nagad {
+    background-color: var(--nagad);
+}
+.badge-rocket {
+    background-color: var(--rocket);
+}
+
+/* Cart Drawer */
+.cart-drawer-overlay {
+    background-color: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Pulse animation for live offers */
+@keyframes pulse-ring {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 0.4; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.pulse-live {
+    animation: pulse-ring 2s infinite ease-in-out;
+}
+
+/* Star rating active */
+.star-filled {
+    color: #f59e0b;
+    fill: #f59e0b;
+}
+.star-empty {
+    color: #cbd5e1;
+}
+
+/* Print Invoice Styles */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #printable-invoice, #printable-invoice * {
+        visibility: visible;
+    }
+    #printable-invoice {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 20px;
+        background: white !important;
+        box-shadow: none !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+}

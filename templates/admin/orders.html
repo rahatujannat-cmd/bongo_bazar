@@ -1,0 +1,276 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}অর্ডার ম্যানেজমেন্ট - BongoBazaar Admin{% endblock %}
+{% block page_title %}অর্ডার ম্যানেজমেন্ট ও চালান ট্র্যাকিং{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    
+    <!-- Top Filter Controls -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h3 class="text-lg font-black text-slate-800">অর্ডার তালিকা ও শিপমেন্ট</h3>
+            <p class="text-xs text-slate-400">স্ট্যাটাস পরিবর্তন করুন: Pending &rarr; Processing &rarr; Shipped &rarr; Delivered</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-slate-600">স্ট্যাটাস ফিল্টার:</label>
+            <select id="order-status-filter" onchange="loadAdminOrders()" class="text-xs p-2 border rounded-xl bg-white outline-none focus:ring-2 focus:ring-purple-500 font-semibold">
+                <option value="all">সকল অর্ডার (All)</option>
+                <option value="Pending">পেন্ডিং (Pending)</option>
+                <option value="Processing">প্রসেসিং (Processing)</option>
+                <option value="Shipped">শিপড (Shipped)</option>
+                <option value="Delivered">ডেলিভারড (Delivered)</option>
+                <option value="Cancelled">বাতিল (Cancelled)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-semibold border-b">
+                    <tr>
+                        <th class="p-4">অর্ডার নং ও তারিখ</th>
+                        <th class="p-4">গ্রাহকের নাম ও ফোন</th>
+                        <th class="p-4">ঠিকানা ও জেলা</th>
+                        <th class="p-4">পেমেন্ট মেথড</th>
+                        <th class="p-4">সর্বমোট (৳)</th>
+                        <th class="p-4">বর্তমান স্ট্যাটাস</th>
+                        <th class="p-4">স্ট্যাটাস / মাইলস্টোন</th>
+                        <th class="p-4 text-right">একশন ও চালান</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-orders-tbody" class="divide-y divide-slate-100 font-medium">
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Milestone Dispatch & Tracking Modal -->
+<div id="milestone-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl w-full max-w-xl p-6 sm:p-8 shadow-2xl space-y-6">
+        <div class="flex items-center justify-between border-b pb-4">
+            <div>
+                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <i data-lucide="truck" class="w-5 h-5 text-purple-600"></i>
+                    <span>অর্ডার প্রসেসিং ও ডেলিভারি মাইলস্টোন কন্ট্রোলার</span>
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">অর্ডার নম্বর: <span id="modal-order-number" class="font-mono font-bold text-purple-700"></span></p>
+            </div>
+            <button onclick="closeMilestoneModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+        </div>
+
+        <!-- Customer Summary -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+            <p class="text-slate-700">গ্রাহক: <strong id="modal-customer-name" class="text-slate-900"></strong> (<span id="modal-customer-phone" class="font-mono"></span>)</p>
+            <p class="text-slate-600">ডেলিভারি ঠিকানা: <span id="modal-shipping-address"></span></p>
+        </div>
+
+        <!-- 4 Action Milestone Buttons -->
+        <div class="space-y-3">
+            <label class="block text-xs font-bold text-slate-700">অগ্রগতি নির্বাচন করুন (এই বাটনে ক্লিক করলেই গ্রাহকের ট্র্যাকিং পেজ আপডেট হবে):</label>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button type="button" onclick="setQuickStatus('Processing')" class="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-amber-300 bg-amber-50/60 hover:bg-amber-100 text-amber-900 text-left transition-all">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold flex-shrink-0 shadow-sm">
+                        <i data-lucide="package" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-black block">২. প্যাকিং ও প্রসেসিং</span>
+                        <span class="text-[10px] text-amber-700 block">ওয়্যারহাউজে প্যাকিং চলছে</span>
+                    </div>
+                </button>
+
+                <button type="button" onclick="setQuickStatus('Shipped')" class="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-sky-300 bg-sky-50/60 hover:bg-sky-100 text-sky-900 text-left transition-all">
+                    <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold flex-shrink-0 shadow-sm">
+                        <i data-lucide="truck" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-black block">৩. ডেলিভারিতে বের হয়েছে</span>
+                        <span class="text-[10px] text-sky-700 block">কুরিয়ার রাইডারের কাছে হস্তান্তর</span>
+                    </div>
+                </button>
+
+                <button type="button" onclick="setQuickStatus('Delivered')" class="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-emerald-300 bg-emerald-50/60 hover:bg-emerald-100 text-emerald-900 text-left transition-all">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold flex-shrink-0 shadow-sm">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-black block">৪. ডেলিভারি সম্পন্ন</span>
+                        <span class="text-[10px] text-emerald-700 block">গ্রাহক পার্সেল গ্রহণ করেছেন</span>
+                    </div>
+                </button>
+
+                <button type="button" onclick="setQuickStatus('Pending')" class="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-left transition-all">
+                    <div class="w-10 h-10 rounded-xl bg-slate-600 text-white flex items-center justify-center font-bold flex-shrink-0 shadow-sm">
+                        <i data-lucide="clock" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-black block">১. পেন্ডিং / রিভিউ</span>
+                        <span class="text-[10px] text-slate-500 block">নতুন প্রাপ্ত অর্ডার</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Courier Tracking Note -->
+        <div class="space-y-1.5 text-xs">
+            <label class="block font-bold text-slate-700">কুরিয়ার বা শিপিং নোট (গ্রাহক ট্র্যাকিং পেজে দেখতে পাবেন):</label>
+            <input type="text" id="modal-tracking-notes" placeholder="যেমন: Steadfast ট্র্যাকিং নং: ST-84910, ডেলিভারিম্যান মো: রফিক (01700-112233)" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500 bg-white">
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="flex items-center justify-between pt-4 border-t text-xs">
+            <a id="modal-customer-view-link" href="#" target="_blank" class="text-emerald-700 hover:text-emerald-800 font-bold underline flex items-center gap-1">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+                <span>গ্রাহকের চোখে লাইভ ট্র্যাকিং পেজ দেখুন &rarr;</span>
+            </a>
+            
+            <button type="button" onclick="closeMilestoneModal()" class="px-5 py-2.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-colors">
+                বন্ধ করুন
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentAdminOrders = [];
+    let activeModalOrderId = null;
+
+    function loadAdminOrders() {
+        const filter = document.getElementById('order-status-filter').value;
+        const url = `/api/admin/orders?status=${filter}`;
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) return;
+                currentAdminOrders = data.orders || [];
+                const tbody = document.getElementById('admin-orders-tbody');
+
+                if (currentAdminOrders.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400">কোনো অর্ডার পাওয়া যায়নি</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                currentAdminOrders.forEach(o => {
+                    let pillClass = 'bg-slate-100 text-slate-700';
+                    let statusBn = 'পেন্ডিং';
+                    if (o.order_status === 'Delivered') { pillClass = 'bg-emerald-100 text-emerald-800'; statusBn = '৪. ডেলিভারি সম্পন্ন'; }
+                    if (o.order_status === 'Shipped') { pillClass = 'bg-sky-100 text-sky-800'; statusBn = '৩. ডেলিভারিতে বের হয়েছে'; }
+                    if (o.order_status === 'Processing') { pillClass = 'bg-amber-100 text-amber-800'; statusBn = '২. প্যাকিং ও প্রসেসিং'; }
+                    if (o.order_status === 'Cancelled') { pillClass = 'bg-red-100 text-red-800'; statusBn = 'বাতিল'; }
+                    if (o.order_status === 'Pending') { pillClass = 'bg-purple-100 text-purple-800'; statusBn = '১. পেন্ডিং / রিভিউ'; }
+
+                    html += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4">
+                            <span class="font-bold text-purple-700 font-mono block text-sm">${o.order_number}</span>
+                            <span class="text-[10px] text-slate-400">${o.created_at}</span>
+                        </td>
+                        <td class="p-4">
+                            <span class="font-bold text-slate-800 block">${o.customer_name}</span>
+                            <span class="font-mono text-[11px] text-slate-500">${o.customer_phone}</span>
+                        </td>
+                        <td class="p-4 text-slate-600">
+                            <span class="font-bold text-slate-700 block">${o.shipping_district}</span>
+                            <span class="text-[10px] text-slate-400 truncate max-w-xs block">${o.shipping_address}</span>
+                        </td>
+                        <td class="p-4">
+                            <span class="font-bold text-slate-800">${o.payment_method}</span>
+                            <span class="block text-[10px] text-slate-400">${o.transaction_id || 'COD'} (${o.payment_status})</span>
+                        </td>
+                        <td class="p-4 font-mono font-black text-slate-900 text-sm">৳${o.total_amount.toLocaleString('en-IN')}</td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${pillClass}">
+                                ${statusBn}
+                            </span>
+                        </td>
+                        <td class="p-4">
+                            <select onchange="updateOrderStatus(${o.id}, this.value)" class="text-xs p-1.5 border rounded-lg bg-white font-semibold outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="Pending" ${o.order_status === 'Pending' ? 'selected' : ''}>১. পেন্ডিং (Pending)</option>
+                                <option value="Processing" ${o.order_status === 'Processing' ? 'selected' : ''}>২. প্যাকিং ও প্রসেসিং (Processing)</option>
+                                <option value="Shipped" ${o.order_status === 'Shipped' ? 'selected' : ''}>৩. ডেলিভারিতে বের হয়েছে (Shipped)</option>
+                                <option value="Delivered" ${o.order_status === 'Delivered' ? 'selected' : ''}>৪. ডেলিভারি সম্পন্ন (Delivered)</option>
+                                <option value="Cancelled" ${o.order_status === 'Cancelled' ? 'selected' : ''}>৫. অর্ডার বাতিল (Cancelled)</option>
+                            </select>
+                        </td>
+                        <td class="p-4 text-right space-x-1 whitespace-nowrap">
+                            <button onclick="openMilestoneModal(${o.id})" class="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm inline-flex items-center gap-1" title="ট্র্যাকিং ও প্রসেসিং কন্ট্রোলার">
+                                <i data-lucide="truck" class="w-3.5 h-3.5"></i>
+                                <span>মাইলস্টোন কন্ট্রোল</span>
+                            </button>
+                            <a href="/admin/invoice/${o.order_number}" target="_blank" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-all shadow-sm inline-flex items-center gap-1">
+                                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                                <span>চালান</span>
+                            </a>
+                        </td>
+                    </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+                if (window.lucide) lucide.createIcons();
+            });
+    }
+
+    function openMilestoneModal(orderId) {
+        const order = currentAdminOrders.find(o => o.id === orderId);
+        if (!order) return;
+
+        activeModalOrderId = orderId;
+        document.getElementById('modal-order-number').textContent = order.order_number;
+        document.getElementById('modal-customer-name').textContent = order.customer_name;
+        document.getElementById('modal-customer-phone').textContent = order.customer_phone;
+        document.getElementById('modal-shipping-address').textContent = `${order.shipping_address}, ${order.shipping_district}`;
+        document.getElementById('modal-tracking-notes').value = order.notes || '';
+        document.getElementById('modal-customer-view-link').href = `/track?order_no=${order.order_number}`;
+
+        document.getElementById('milestone-modal').classList.remove('hidden');
+    }
+
+    function closeMilestoneModal() {
+        document.getElementById('milestone-modal').classList.add('hidden');
+        activeModalOrderId = null;
+    }
+
+    function setQuickStatus(status) {
+        if (!activeModalOrderId) return;
+        const notes = document.getElementById('modal-tracking-notes').value.trim();
+        updateOrderStatus(activeModalOrderId, status, notes);
+    }
+
+    function updateOrderStatus(orderId, newStatus, customNotes = null) {
+        const payload = { status: newStatus };
+        if (customNotes !== null) {
+            payload.notes = customNotes;
+        }
+
+        fetch(`/api/admin/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                showToast('মাইলস্টোন আপডেট সফল!', `স্ট্যাটাস পরিবর্তিত হয়েছে: ${newStatus}`, 'success');
+                closeMilestoneModal();
+                loadAdminOrders();
+            } else {
+                showToast('ত্রুটি', res.message, 'error');
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAdminOrders);
+</script>
+{% endblock %}

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}অ্যাডমিন প্যানেল - BongoBazaar{% endblock %}</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+<body class="bg-slate-100 text-slate-800 flex h-screen overflow-hidden">
+
+    <!-- Admin Sidebar -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between hidden md:flex flex-shrink-0 border-r border-slate-800">
+        <div>
+            <!-- Admin Brand Logo -->
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+                <a href="/admin" class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center text-white font-bold shadow-md">
+                        <i data-lucide="shield" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-lg font-black text-white block leading-tight">অ্যাডমিন হাব</span>
+                        <span class="text-[10px] text-purple-400 font-bold uppercase tracking-wider">BongoBazaar Pro</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-4 space-y-1 text-xs font-bold">
+                <a href="/admin" class="flex items-center gap-3 px-4 py-3 rounded-xl {% if request.path == '/admin' %}bg-purple-600 text-white shadow-md{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %} transition-all">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>ড্যাশবোর্ড (Dashboard)</span>
+                </a>
+
+                <a href="/admin/products" class="flex items-center gap-3 px-4 py-3 rounded-xl {% if request.path == '/admin/products' %}bg-purple-600 text-white shadow-md{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %} transition-all">
+                    <i data-lucide="boxes" class="w-4 h-4"></i>
+                    <span>প্রোডাক্ট ম্যানেজমেন্ট</span>
+                </a>
+
+                <a href="/admin/orders" class="flex items-center gap-3 px-4 py-3 rounded-xl {% if request.path == '/admin/orders' %}bg-purple-600 text-white shadow-md{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %} transition-all">
+                    <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                    <span>অর্ডার ম্যানেজমেন্ট</span>
+                </a>
+
+                <a href="/admin/customers" class="flex items-center gap-3 px-4 py-3 rounded-xl {% if request.path == '/admin/customers' %}bg-purple-600 text-white shadow-md{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %} transition-all">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <span>কাস্টমার লিস্ট</span>
+                </a>
+
+                <a href="/admin/coupons" class="flex items-center gap-3 px-4 py-3 rounded-xl {% if request.path == '/admin/coupons' %}bg-purple-600 text-white shadow-md{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %} transition-all">
+                    <i data-lucide="ticket" class="w-4 h-4"></i>
+                    <span>কুপন ও ডিসকাউন্ট</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Sidebar Footer -->
+        <div class="p-4 border-t border-slate-800 space-y-2">
+            <a href="/" target="_blank" class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-semibold rounded-xl transition-colors">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+                <span>মূল ওয়েবসাইট দেখুন</span>
+            </a>
+            <button onclick="logoutUser()" class="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded-xl transition-colors">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                <span>লগআউট</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-screen overflow-y-auto">
+        
+        <!-- Top Admin Header -->
+        <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+            <div class="flex items-center gap-3">
+                <h2 class="text-base sm:text-lg font-black text-slate-800">
+                    {% block page_title %}অ্যাডমিন ওভারভিউ{% endblock %}
+                </h2>
+            </div>
+
+            <div class="flex items-center gap-4 text-xs font-semibold">
+                <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full text-slate-600">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-purple-600"></i>
+                    <span id="admin-current-date"></span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold border border-purple-200">
+                        {{ g.user.name[0] if g.user else 'A' }}
+                    </div>
+                    <span class="text-slate-800 hidden sm:inline">{{ g.user.name if g.user else 'Admin' }}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Admin Content -->
+        <main class="p-6 sm:p-8 flex-1">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateEl = document.getElementById('admin-current-date');
+            if (dateEl) {
+                dateEl.textContent = new Date().toLocaleDateString('bn-BD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            }
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,435 @@
+{% extends 'base.html' %}
+
+{% block title %}BongoBazaar - বাংলাদেশের প্রিমিয়াম ই-কমার্স মার্কেটপ্লেস{% endblock %}
+
+{% block content %}
+<div class="space-y-12 pb-16">
+
+    <!-- Hero Section -->
+    <section class="max-w-7xl mx-auto px-4 pt-6">
+        <div class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 text-white shadow-2xl min-h-[460px] flex items-center">
+            
+            <!-- Background Image with Overlay -->
+            <div class="absolute inset-0 opacity-25 mix-blend-overlay bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&auto=format&fit=crop&q=80');"></div>
+            
+            <div class="relative z-10 p-8 sm:p-14 max-w-2xl space-y-6">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold tracking-wide">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span>নতুন আগমন ২০২৬ &bull; উৎসব মেগা ধামাকা</span>
+                </div>
+
+                <h1 class="text-3xl sm:text-5xl font-black leading-tight tracking-tight">
+                    সেরা মানের দেশি ও আন্তর্জাতিক পণ্য, <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-amber-300">এখন এক ক্লিকেই!</span>
+                </h1>
+
+                <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                    আড়ং স্টাইল সিল্ক পাঞ্জাবি, ঢাকাই জামদানি, ওয়ালটন ৪কে স্মার্ট টিভি থেকে সুন্দরবনের খাঁটি মধু—৬৪ জেলায় দ্রুততম ক্যাশ অন ডেলিভারি।
+                </p>
+
+                <div class="flex flex-wrap items-center gap-4 pt-2">
+                    <a href="/shop" class="px-7 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-sm font-bold rounded-2xl shadow-lg shadow-emerald-700/30 transition-all flex items-center gap-2">
+                        <span>শপিং শুরু করুন</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </a>
+                    <a href="/shop?flash=1" class="px-6 py-3.5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white text-sm font-bold rounded-2xl transition-all flex items-center gap-2">
+                        <i data-lucide="zap" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+                        <span>ফ্ল্যাশ ডিল দেখুন</span>
+                    </a>
+                </div>
+
+                <!-- Trust Micro-Badges -->
+                <div class="flex items-center gap-6 pt-4 text-xs text-slate-300 border-t border-white/10">
+                    <div class="flex items-center gap-1.5">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+                        <span>১০০% খাঁটি পণ্য</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <i data-lucide="truck" class="w-4 h-4 text-emerald-400"></i>
+                        <span>দ্রুত হোম ডেলিভারি</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                        <span>সহজ রিটার্ন</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero Floating Badge / Visual Graphic (Desktop) -->
+            <div class="hidden lg:flex absolute right-12 bottom-12 items-center gap-4 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 max-w-xs text-white">
+                <img src="https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?w=300&auto=format&fit=crop&q=80" alt="Panjabi" class="w-16 h-16 object-cover rounded-xl border border-white/30">
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-amber-300">হট ডিল</span>
+                    <h4 class="text-xs font-bold truncate">আড়ং স্টাইল প্রিমিয়াম সিল্ক</h4>
+                    <p class="text-sm font-black text-white">৳৩,৬০০ <span class="text-xs line-through text-slate-400 font-normal">৳৪,৫০০</span></p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Value Propositions / Feature Badges -->
+    <section class="max-w-7xl mx-auto px-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            
+            <div class="flex items-center gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+                <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="truck" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800">সারা দেশে ডেলিভারি</h4>
+                    <p class="text-xs text-slate-500">৬৪ জেলায় দ্রুত পৌঁছানো</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+                <div class="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="wallet" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800">ক্যাশ অন ডেলিভারি</h4>
+                    <p class="text-xs text-slate-500">পণ্য দেখে টাকা দিন</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+                <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="refresh-cw" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800">৭ দিনে রিটার্ন</h4>
+                    <p class="text-xs text-slate-500">১০০% মানিব্যাক পলিসি</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+                <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="headphones" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800">২৪/৭ কাস্টমার সাপোর্ট</h4>
+                    <p class="text-xs text-slate-500">হটলাইন ও লাইভ চ্যাট</p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Featured Categories Grid -->
+    <section class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-xl sm:text-2xl font-black text-slate-900">জনপ্রিয় ক্যাটাগরি</h2>
+                <p class="text-xs sm:text-sm text-slate-500 mt-0.5">আপনার প্রয়োজনীয় পণ্য সহজে খুঁজে নিন</p>
+            </div>
+            <a href="/shop" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
+                সবগুলো দেখুন <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {% for cat in categories %}
+            <a href="/shop?category={{ cat.slug }}" class="group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-emerald-500 transition-all text-center p-3">
+                <div class="w-full h-24 rounded-xl overflow-hidden bg-slate-100 mb-3">
+                    <img src="{{ cat.image_url }}" alt="{{ cat.name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                </div>
+                <h3 class="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-emerald-700 truncate">{{ cat.name_bn }}</h3>
+                <span class="text-[11px] text-slate-400 block mt-0.5">{{ cat.name }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Flash Sale with Live Countdown Timer -->
+    <section class="max-w-7xl mx-auto px-4">
+        <div class="bg-gradient-to-br from-amber-500 via-orange-500 to-red-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-white/20 pb-5">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-2xl bg-white/20 backdrop-blur-md">
+                        <i data-lucide="flame" class="w-7 h-7 text-yellow-200 fill-yellow-300 animate-bounce"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-2xl font-black">আজকের ফ্ল্যাশ সেল 🔥</h2>
+                            <span class="px-2.5 py-0.5 bg-yellow-300 text-slate-900 text-xs font-extrabold rounded-full">মেগা অফার</span>
+                        </div>
+                        <p class="text-xs text-amber-100 mt-0.5">সীমিত সময়ের জন্য অবিশ্বাস্য ডিসকাউন্ট! স্টক দ্রুত শেষ হচ্ছে</p>
+                    </div>
+                </div>
+
+                <!-- Live Countdown -->
+                <div id="flash-sale-timer" class="flex items-center gap-2 text-slate-900 font-mono font-bold">
+                    <div class="bg-white rounded-xl px-3 py-1.5 text-center shadow">
+                        <span id="flash-hours" class="text-lg block font-black">04</span>
+                        <span class="text-[10px] text-slate-500 uppercase block font-sans -mt-1">ঘণ্টা</span>
+                    </div>
+                    <span class="text-white text-xl">:</span>
+                    <div class="bg-white rounded-xl px-3 py-1.5 text-center shadow">
+                        <span id="flash-minutes" class="text-lg block font-black">28</span>
+                        <span class="text-[10px] text-slate-500 uppercase block font-sans -mt-1">মিনিট</span>
+                    </div>
+                    <span class="text-white text-xl">:</span>
+                    <div class="bg-white rounded-xl px-3 py-1.5 text-center shadow">
+                        <span id="flash-seconds" class="text-lg block font-black">45</span>
+                        <span class="text-[10px] text-slate-500 uppercase block font-sans -mt-1">সেকেন্ড</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flash Products Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {% for prod in flash_products %}
+                <div class="bg-white text-slate-800 rounded-2xl overflow-hidden shadow-sm product-card flex flex-col">
+                    <div class="relative product-image-container aspect-square bg-slate-50">
+                        <img src="{{ prod.image }}" alt="{{ prod.title }}" class="w-full h-full object-cover product-img">
+                        
+                        <!-- Discount Badge -->
+                        {% if prod.sale_price and prod.price > prod.sale_price %}
+                        {% set discount_pct = ((prod.price - prod.sale_price) / prod.price * 100) | round | int %}
+                        <span class="absolute top-2 left-2 px-2 py-0.5 bg-red-600 text-white text-[10px] font-black rounded-lg shadow">
+                            -{{ discount_pct }}%
+                        </span>
+                        {% endif %}
+
+                        <!-- Wishlist Toggle -->
+                        <button 
+                            onclick="Wishlist.toggle({id: {{ prod.id }}, title: '{{ prod.title }}', price: {{ prod.sale_price or prod.price }}, image: '{{ prod.image }}'})"
+                            data-wishlist-id="{{ prod.id }}"
+                            class="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 backdrop-blur-sm text-slate-400 hover:text-red-500 shadow-sm transition-colors"
+                        >
+                            <i data-lucide="heart" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-3.5 flex-1 flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">{{ prod.brand or prod.category_name }}</span>
+                            <a href="/product/{{ prod.id }}" class="block font-bold text-xs sm:text-sm text-slate-800 hover:text-emerald-600 line-clamp-2 mt-0.5">
+                                {{ prod.title_bn or prod.title }}
+                            </a>
+                            <div class="flex items-center gap-1 mt-1 text-[11px] text-amber-500">
+                                <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+                                <span class="font-bold">{{ prod.rating }}</span>
+                                <span class="text-slate-400">({{ prod.review_count }})</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 pt-2 border-t border-slate-100">
+                            <div class="flex items-baseline gap-1.5 mb-2">
+                                <span class="text-sm font-black text-red-600">৳{{ '{:,.0f}'.format(prod.sale_price or prod.price) }}</span>
+                                {% if prod.sale_price %}
+                                <span class="text-xs text-slate-400 line-through">৳{{ '{:,.0f}'.format(prod.price) }}</span>
+                                {% endif %}
+                            </div>
+
+                            <button 
+                                onclick="Cart.addItem({id: {{ prod.id }}, title: '{{ prod.title }}', price: {{ prod.price }}, sale_price: {{ prod.sale_price or 0 }}, image: '{{ prod.image }}', stock: {{ prod.stock }}})" 
+                                class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5"
+                            >
+                                <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
+                                <span>কার্টে নিন</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Promotional Duo Banners -->
+    <section class="max-w-7xl mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-emerald-900 to-teal-800 text-white p-8 flex flex-col justify-between min-h-[220px] shadow-lg">
+                <div class="relative z-10 space-y-2 max-w-sm">
+                    <span class="px-2.5 py-1 rounded-full bg-emerald-500/30 text-emerald-200 text-xs font-bold">ঐতিহ্যবাহী পোশাক</span>
+                    <h3 class="text-2xl font-black">খাঁটি টাঙ্গাইল ও জামদানি শাড়ি</h3>
+                    <p class="text-xs text-emerald-100">সরাসরি তাঁতীদের তৈরি খাঁটি কাপড়ে আকর্ষণীয় কালেকশন।</p>
+                </div>
+                <div class="relative z-10 pt-4">
+                    <a href="/shop?category=fashion" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-900 hover:bg-emerald-50 rounded-xl text-xs font-bold transition-all shadow">
+                        কালেকশন দেখুন &rarr;
+                    </a>
+                </div>
+                <img src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&auto=format&fit=crop&q=80" alt="Saree" class="absolute -right-6 -bottom-6 w-48 h-48 object-cover rounded-2xl opacity-40 mix-blend-overlay">
+            </div>
+
+            <div class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-amber-900 to-orange-800 text-white p-8 flex flex-col justify-between min-h-[220px] shadow-lg">
+                <div class="relative z-10 space-y-2 max-w-sm">
+                    <span class="px-2.5 py-1 rounded-full bg-amber-500/30 text-amber-200 text-xs font-bold">১০০% প্রাকৃতিক ও খাঁটি</span>
+                    <h3 class="text-2xl font-black">সুন্দরবনের মধু ও ঘানি ভাঙা তেল</h3>
+                    <p class="text-xs text-amber-100">কোনো ভেজাল নেই, স্বাস্থ্যকর জীবনযাপনের সেরা সঙ্গী।</p>
+                </div>
+                <div class="relative z-10 pt-4">
+                    <a href="/shop?category=groceries" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-amber-900 hover:bg-amber-50 rounded-xl text-xs font-bold transition-all shadow">
+                        অর্ডার করুন &rarr;
+                    </a>
+                </div>
+                <img src="https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&auto=format&fit=crop&q=80" alt="Honey" class="absolute -right-6 -bottom-6 w-48 h-48 object-cover rounded-2xl opacity-40 mix-blend-overlay">
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Best Selling / Featured Catalog Section -->
+    <section class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-xl sm:text-2xl font-black text-slate-900">সেরা বিক্রিত ও জনপ্রিয় পণ্য</h2>
+                <p class="text-xs sm:text-sm text-slate-500 mt-0.5">গ্রাহকদের সর্বোচ্চ রেটিং ও রিভিউ প্রাপ্ত পছন্দের তালিকা</p>
+            </div>
+            <a href="/shop" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
+                সম্পূর্ণ ক্যাটালগ <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {% for prod in best_sellers %}
+            <div class="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm product-card flex flex-col">
+                <div class="relative product-image-container aspect-square bg-slate-50">
+                    <img src="{{ prod.image }}" alt="{{ prod.title }}" class="w-full h-full object-cover product-img">
+                    
+                    {% if prod.sale_price and prod.price > prod.sale_price %}
+                    {% set discount_pct = ((prod.price - prod.sale_price) / prod.price * 100) | round | int %}
+                    <span class="absolute top-2.5 left-2.5 px-2.5 py-1 bg-red-600 text-white text-[11px] font-black rounded-lg shadow">
+                        -{{ discount_pct }}%
+                    </span>
+                    {% endif %}
+
+                    <button 
+                        onclick="Wishlist.toggle({id: {{ prod.id }}, title: '{{ prod.title }}', price: {{ prod.sale_price or prod.price }}, image: '{{ prod.image }}'})"
+                        data-wishlist-id="{{ prod.id }}"
+                        class="absolute top-2.5 right-2.5 p-2 rounded-full bg-white/90 backdrop-blur-sm text-slate-400 hover:text-red-500 shadow-sm transition-colors"
+                    >
+                        <i data-lucide="heart" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                            <span>{{ prod.brand or 'BongoBazaar' }}</span>
+                            <span class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold text-[10px]">স্টক: {{ prod.stock }} টি</span>
+                        </div>
+                        <a href="/product/{{ prod.id }}" class="block font-bold text-sm text-slate-800 hover:text-emerald-600 line-clamp-2">
+                            {{ prod.title_bn or prod.title }}
+                        </a>
+                        <div class="flex items-center gap-1.5 mt-2 text-xs text-amber-500">
+                            <div class="flex items-center">
+                                <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+                            </div>
+                            <span class="font-bold text-slate-700">{{ prod.rating }}</span>
+                            <span class="text-slate-400">({{ prod.review_count }} রিভিউ)</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <div>
+                            <span class="text-base sm:text-lg font-black text-slate-900">৳{{ '{:,.0f}'.format(prod.sale_price or prod.price) }}</span>
+                            {% if prod.sale_price %}
+                            <span class="text-xs text-slate-400 line-through block -mt-1">৳{{ '{:,.0f}'.format(prod.price) }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex gap-1.5">
+                            <button 
+                                onclick="Cart.addItem({id: {{ prod.id }}, title: '{{ prod.title }}', price: {{ prod.price }}, sale_price: {{ prod.sale_price or 0 }}, image: '{{ prod.image }}', stock: {{ prod.stock }}})" 
+                                class="p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-all"
+                                title="কার্টে যোগ করুন"
+                            >
+                                <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                            </button>
+                            <a 
+                                href="/product/{{ prod.id }}" 
+                                class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors"
+                                title="বিস্তারিত দেখুন"
+                            >
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Customer Reviews / Testimonials -->
+    <section class="max-w-7xl mx-auto px-4">
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-sm">
+            <div class="text-center max-w-xl mx-auto mb-8">
+                <span class="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full uppercase tracking-wider">গ্রাহকদের সন্তুষ্টি</span>
+                <h3 class="text-2xl font-black text-slate-900 mt-2">আমাদের ক্রেতারা যা বলছেন</h3>
+                <p class="text-xs sm:text-sm text-slate-500 mt-1">সারা দেশ থেকে হাজারো সন্তুষ্ট গ্রাহকদের নির্ভরযোগ্য প্রতিক্রিয়া</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <div class="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+                    <div class="flex items-center gap-1 text-amber-400">
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed italic">
+                        "আড়ং স্টাইল সিল্ক পাঞ্জাবিটি ঈদের জন্য অর্ডার করেছিলাম। কাপড়ের কোয়ালিটি ও এমব্রয়ডারি সত্যিই প্রিমিয়াম। ঢাকার বাইরে মাত্র ২ দিনেই পার্সেল পেয়েছি।"
+                    </p>
+                    <div class="flex items-center gap-2 pt-2 border-t border-slate-200 text-xs">
+                        <div class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold">তা</div>
+                        <div>
+                            <p class="font-bold text-slate-800">তানভীর হোসেন</p>
+                            <p class="text-[10px] text-emerald-600 font-semibold">ভেরিফাইড ক্রেতা &bull; ঢাকা</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+                    <div class="flex items-center gap-1 text-amber-400">
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed italic">
+                        "সুন্দরবনের খাঁটি মধু ও সরিষার তেল নিয়েছিলাম। ভেজালের এই যুগে খাঁটি জিনিস পাওয়া কঠিন ছিল, কিন্তু বঙ্গবাজারের কোয়ালিটি ১০০% নির্ভেজাল প্রমাণিত হয়েছে।"
+                    </p>
+                    <div class="flex items-center gap-2 pt-2 border-t border-slate-200 text-xs">
+                        <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">না</div>
+                        <div>
+                            <p class="font-bold text-slate-800">নাজনীন সুলতানা</p>
+                            <p class="text-[10px] text-emerald-600 font-semibold">ভেরিফাইড ক্রেতা &bull; চট্টগ্রাম</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+                    <div class="flex items-center gap-1 text-amber-400">
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed italic">
+                        "বিকাশ অটো-গেটওয়ে দিয়ে অর্ডার করলাম, মুহূর্তের মধ্যেই কনফার্মেশন ও ট্র্যাকিং নম্বর পেয়ে যাই। ডেলিভারিম্যানও অত্যন্ত অমায়িক ছিলেন। ৫ স্টার সার্ভিস!"
+                    </p>
+                    <div class="flex items-center gap-2 pt-2 border-t border-slate-200 text-xs">
+                        <div class="w-7 h-7 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold">রা</div>
+                        <div>
+                            <p class="font-bold text-slate-800">রাকিবুল হাসান</p>
+                            <p class="text-[10px] text-emerald-600 font-semibold">ভেরিফাইড ক্রেতা &bull; সিলেট</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}

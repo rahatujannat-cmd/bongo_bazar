@@ -1,0 +1,166 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}কুপন ও ডিসকাউন্ট - BongoBazaar Admin{% endblock %}
+{% block page_title %}প্রোমো কোড ও ডিসকাউন্ট ভাউচার সিস্টেম{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- Left: Create Coupon Form (1 col) -->
+    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+        <h3 class="text-base font-bold text-slate-900 border-b pb-3">নতুন কুপন কোড তৈরি করুন</h3>
+        
+        <form onsubmit="handleCreateCoupon(event)" class="space-y-4 text-xs">
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">কুপন কোড (যেমন: EID20, WINTER10) <span class="text-red-500">*</span></label>
+                <input type="text" id="cpn-code" required placeholder="EID20" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500 uppercase font-mono font-bold">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">ডিসকাউন্ট ধরন</label>
+                    <select id="cpn-type" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="percentage">শতাংশ (%)</option>
+                        <option value="fixed">নির্দিষ্ট টাকা (৳)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">পরিমাণ (Value) <span class="text-red-500">*</span></label>
+                    <input type="number" id="cpn-value" required step="1" placeholder="20 বা 100" class="w-full p-2.5 border rounded-xl font-mono outline-none focus:ring-2 focus:ring-purple-500 font-bold">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">সর্বনিম্ন অর্ডার (৳)</label>
+                    <input type="number" id="cpn-min-spend" value="1000" class="w-full p-2.5 border rounded-xl font-mono outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">সর্বোচ্চ ছাড় (৳)</label>
+                    <input type="number" id="cpn-max-discount" placeholder="500" class="w-full p-2.5 border rounded-xl font-mono outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">ব্যবহারের সর্বোচ্চ সীমা</label>
+                <input type="number" id="cpn-usage-limit" value="500" class="w-full p-2.5 border rounded-xl font-mono outline-none focus:ring-2 focus:ring-purple-500">
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold shadow-md transition-all text-xs">
+                কুপন সক্রিয় করুন &rarr;
+            </button>
+        </form>
+    </div>
+
+    <!-- Right: Active Coupons List (2 cols) -->
+    <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-200">
+            <h3 class="font-bold text-slate-800 text-sm">সক্রিয় কুপন কোডসমূহ</h3>
+            <p class="text-xs text-slate-400">গ্রাহকরা চেকআউটে এই কোডগুলো ব্যবহার করে ছাড় পাবেন</p>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-semibold border-b">
+                    <tr>
+                        <th class="p-4">কোড</th>
+                        <th class="p-4">ছাড়ের বিবরণ</th>
+                        <th class="p-4">ন্যূনতম খরচ</th>
+                        <th class="p-4">সর্বোচ্চ ছাড়</th>
+                        <th class="p-4">ব্যবহার হয়েছে</th>
+                        <th class="p-4 text-right">একশন</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-coupons-tbody" class="divide-y divide-slate-100 font-medium">
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function loadAdminCoupons() {
+        fetch('/api/admin/coupons')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) return;
+                const tbody = document.getElementById('admin-coupons-tbody');
+
+                let html = '';
+                data.coupons.forEach(c => {
+                    const discountText = c.discount_type === 'percentage' ? `${c.discount_value}% ছাড়` : `৳${c.discount_value} ফ্ল্যাট ছাড়`;
+                    html += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 bg-purple-100 text-purple-800 font-mono font-black rounded-lg text-xs tracking-wider">
+                                ${c.code}
+                            </span>
+                        </td>
+                        <td class="p-4 font-bold text-emerald-700">${discountText}</td>
+                        <td class="p-4 font-mono text-slate-700">৳${c.min_spend}</td>
+                        <td class="p-4 font-mono text-slate-700">${c.max_discount ? `৳${c.max_discount}` : 'আনলিমিটেড'}</td>
+                        <td class="p-4 font-mono text-slate-600">${c.used_count} বার</td>
+                        <td class="p-4 text-right">
+                            <button onclick="deleteCoupon(${c.id})" class="p-1.5 text-slate-400 hover:text-red-600" title="মুছে ফেলুন">
+                                <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+                if (window.lucide) lucide.createIcons();
+            });
+    }
+
+    function handleCreateCoupon(e) {
+        e.preventDefault();
+        const payload = {
+            code: document.getElementById('cpn-code').value.trim().toUpperCase(),
+            discount_type: document.getElementById('cpn-type').value,
+            discount_value: parseFloat(document.getElementById('cpn-value').value),
+            min_spend: parseFloat(document.getElementById('cpn-min-spend').value) || 0,
+            max_discount: document.getElementById('cpn-max-discount').value ? parseFloat(document.getElementById('cpn-max-discount').value) : null,
+            usage_limit: parseInt(document.getElementById('cpn-usage-limit').value) || 100
+        };
+
+        fetch('/api/admin/coupons', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                showToast('সফল!', res.message, 'success');
+                document.getElementById('cpn-code').value = '';
+                loadAdminCoupons();
+            } else {
+                showToast('ত্রুটি', res.message, 'error');
+            }
+        });
+    }
+
+    function deleteCoupon(id) {
+        if (!confirm('আপনি কি এই কুপনটি ডিলিট করতে চান?')) return;
+
+        fetch(`/api/admin/coupons/${id}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    showToast('মুছে ফেলা হয়েছে', res.message, 'info');
+                    loadAdminCoupons();
+                } else {
+                    showToast('ত্রুটি', res.message, 'error');
+                }
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAdminCoupons);
+</script>
+{% endblock %}
