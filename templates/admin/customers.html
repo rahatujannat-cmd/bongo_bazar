@@ -45,6 +45,11 @@
                 if (!data.success) return;
                 const tbody = document.getElementById('admin-customers-tbody');
 
+                if (!data.customers || data.customers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="p-12 text-center text-slate-400 font-semibold">বর্তমানে কোনো নিবন্ধিত গ্রাহক নেই। নতুন গ্রাহক একাউন্ট তৈরি করলে এখানে তালিকা দেখা যাবে।</td></tr>';
+                    return;
+                }
+
                 let html = '';
                 data.customers.forEach(c => {
                     html += `

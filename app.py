@@ -317,26 +317,6 @@ def api_login():
         'user': dict(user)
     })
 
-@app.route('/api/auth/demo-login', methods=['POST'])
-def api_demo_login():
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, name, email, phone, role, address, city, district FROM users WHERE role = ? LIMIT 1', ('customer',))
-    user = cursor.fetchone()
-    conn.close()
-
-    if not user:
-        return jsonify({'success': False, 'message': 'টেস্ট কাস্টমার অ্যাকাউন্ট পাওয়া যায়নি'}), 404
-
-    session['user_id'] = user['id']
-    session['role'] = 'customer'
-
-    return jsonify({
-        'success': True,
-        'message': 'টেস্ট কাস্টমার লগইন সফল!',
-        'user': dict(user)
-    })
-
 @app.route('/api/auth/logout', methods=['POST'])
 def api_logout():
     session.pop('user_id', None)
@@ -888,17 +868,9 @@ def api_admin_stats():
     c.execute('SELECT COUNT(*) as low_stock FROM products WHERE stock < 10')
     low_stock = int(c.fetchone()['low_stock'])
 
-    # Recent 6 Orders
-    c.execute('SELECT * FROM orders ORDER BY created_at DESC LIMIT 6')
+    # Recent Orders
+    c.execute('SELECT * FROM orders ORDER BY created_at DESC LIMIT 10')
     recent_orders = [dict(r) for r in c.fetchall()]
-
-    # Top Selling Products (ordered by review count/mock logic)
-    c.execute('SELECT id, title, price, sale_price, stock, image, review_count FROM products ORDER BY review_count DESC LIMIT 5')
-    top_products = [dict(r) for r in c.fetchall()]
-
-    # Monthly revenue data for Chart.js
-    chart_labels = ['মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর']
-    chart_data = [45000, 68000, 89000, 115000, 142000, 178000, total_sales + 120000]
 
     conn.close()
 
@@ -913,12 +885,7 @@ def api_admin_stats():
             'total_customers': total_customers,
             'low_stock': low_stock
         },
-        'chart': {
-            'labels': chart_labels,
-            'data': chart_data
-        },
-        'recent_orders': recent_orders,
-        'top_products': top_products
+        'recent_orders': recent_orders
     })
 
 @app.route('/api/admin/products', methods=['GET', 'POST'])

@@ -237,27 +237,14 @@ def seed_db():
             VALUES (?, ?, ?, ?, ?, ?)
             ''', cat)
 
-    # 3. Seed Default Coupons (if empty)
-    cursor.execute('SELECT COUNT(*) as cnt FROM coupons')
-    if cursor.fetchone()['cnt'] == 0:
-        now = datetime.now()
-        coupons = [
-            ('EID20', 'percentage', 20.0, 500.0, 1500.0, (now + timedelta(days=60)).strftime('%Y-%m-%d'), 200, 1),
-            ('WELCOME50', 'fixed', 50.0, None, 500.0, (now + timedelta(days=90)).strftime('%Y-%m-%d'), 500, 1),
-            ('BONGO100', 'fixed', 100.0, None, 1000.0, (now + timedelta(days=30)).strftime('%Y-%m-%d'), 100, 1)
-        ]
-        for c in coupons:
-            cursor.execute('''
-            INSERT INTO coupons (code, discount_type, discount_value, max_discount, min_spend, expiry_date, usage_limit, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', c)
+    # Clean any demo coupons
+    cursor.execute('DELETE FROM coupons')
 
-    # NOTE: NO DEMO PRODUCTS are seeded! All demo products are removed.
     conn.commit()
     conn.close()
 
 def clear_demo_data():
-    """Purges all demo products, reviews, wishlist, and demo order items from database."""
+    """Purges all demo data from database."""
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM products")
@@ -265,10 +252,11 @@ def clear_demo_data():
     cursor.execute("DELETE FROM reviews")
     cursor.execute("DELETE FROM wishlist")
     cursor.execute("DELETE FROM orders")
-    cursor.execute("DELETE FROM users WHERE role = 'admin'")
+    cursor.execute("DELETE FROM users")
+    cursor.execute("DELETE FROM coupons")
     conn.commit()
     conn.close()
-    print("All demo products and related demo data successfully purged!")
+    print("All demo data successfully purged!")
 
 if __name__ == '__main__':
     init_db()

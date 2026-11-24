@@ -14,7 +14,7 @@
             <div class="space-y-1">
                 <span class="text-xs text-slate-400 font-semibold uppercase">সর্বমোট বিক্রি (Revenue)</span>
                 <h3 id="stat-total-sales" class="text-2xl font-black text-slate-900 font-mono">৳০</h3>
-                <span class="text-[11px] text-emerald-600 font-bold">&uarr; +১২.৫% এই মাসে বৃদ্ধি</span>
+                <span class="text-[11px] text-emerald-600 font-semibold">আদায়যোগ্য মূল্য</span>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                 <i data-lucide="banknote" class="w-6 h-6"></i>
@@ -38,7 +38,7 @@
             <div class="space-y-1">
                 <span class="text-xs text-slate-400 font-semibold uppercase">পেন্ডিং অর্ডার (Processing)</span>
                 <h3 id="stat-pending-orders" class="text-2xl font-black text-amber-600 font-mono">০</h3>
-                <span class="text-[11px] text-amber-600 font-semibold">দ্রুত শিপমেন্ট প্রয়োজন</span>
+                <span class="text-[11px] text-amber-600 font-semibold">ডেলিভারি প্রয়োজন</span>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
                 <i data-lucide="clock" class="w-6 h-6"></i>
@@ -59,36 +59,37 @@
 
     </div>
 
-    <!-- Middle Grid: Revenue Trend Chart + Top Products -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <!-- Sales Chart (2 cols) -->
-        <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-            <div class="flex items-center justify-between border-b pb-3">
-                <div>
-                    <h3 class="font-bold text-slate-800 text-sm">মাসিক বিক্রয় প্রবৃদ্ধি (Sales Trend BDT ৳)</h3>
-                    <p class="text-xs text-slate-400">গত ৭ মাসের মোট বিক্রয় পরিসংখ্যান</p>
-                </div>
-                <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
-                    ২০২৬ অডিট
-                </span>
+    <!-- Quick Action Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <a href="/admin/products" class="p-5 bg-white rounded-3xl border border-slate-200 shadow-sm hover:border-purple-500 hover:shadow-md transition-all flex items-center gap-4 group">
+            <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="boxes" class="w-6 h-6"></i>
             </div>
-            <div class="h-64">
-                <canvas id="salesChart"></canvas>
+            <div>
+                <h4 class="font-bold text-slate-900 text-sm">প্রোডাক্ট ক্যাটালগ</h4>
+                <p class="text-xs text-slate-400 mt-0.5">নতুন পণ্য যুক্ত করুন ও ইনভেন্টরি পরিচালনা করুন</p>
             </div>
-        </div>
+        </a>
 
-        <!-- Top Selling Products (1 col) -->
-        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-            <div class="border-b pb-3">
-                <h3 class="font-bold text-slate-800 text-sm">সর্বাধিক বিক্রিত পণ্য</h3>
-                <p class="text-xs text-slate-400">গ্রাহকদের সর্বোচ্চ অর্ডারের ভিত্তিতে</p>
+        <a href="/admin/orders" class="p-5 bg-white rounded-3xl border border-slate-200 shadow-sm hover:border-purple-500 hover:shadow-md transition-all flex items-center gap-4 group">
+            <div class="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="shopping-bag" class="w-6 h-6"></i>
             </div>
-            <div id="top-products-list" class="divide-y divide-slate-100 space-y-2">
-                <!-- Dynamically filled -->
+            <div>
+                <h4 class="font-bold text-slate-900 text-sm">অর্ডার ম্যানেজমেন্ট</h4>
+                <p class="text-xs text-slate-400 mt-0.5">অর্ডার প্রসেসিং, ডেলিভারি স্ট্যাটাস ও চালান প্রিন্ট</p>
             </div>
-        </div>
+        </a>
 
+        <a href="/admin/customers" class="p-5 bg-white rounded-3xl border border-slate-200 shadow-sm hover:border-purple-500 hover:shadow-md transition-all flex items-center gap-4 group">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-900 text-sm">কাস্টমার ডিরেক্টরি</h4>
+                <p class="text-xs text-slate-400 mt-0.5">নিবন্ধিত কাস্টমার তালিকা ও অর্ডারের ইতিহাস</p>
+            </div>
+        </a>
     </div>
 
     <!-- Recent Orders Table -->
@@ -215,8 +216,6 @@
 
 {% block scripts %}
 <script>
-    let salesChartInstance = null;
-
     function loadAdminDashboard() {
         fetch('/api/admin/stats')
             .then(res => res.json())
@@ -229,30 +228,6 @@
                 document.getElementById('stat-today-orders').textContent = s.today_orders;
                 document.getElementById('stat-pending-orders').textContent = s.pending_orders;
                 document.getElementById('stat-low-stock').textContent = s.low_stock;
-
-                // Render Chart
-                renderSalesChart(data.chart.labels, data.chart.data);
-
-                // Render Top Products
-                let topHtml = '';
-                if (!data.top_products || data.top_products.length === 0) {
-                    topHtml = '<div class="text-center py-6 text-slate-400 text-xs"><i data-lucide="package" class="w-6 h-6 mx-auto mb-1 opacity-50"></i>কোনো পণ্য বিক্রিত হয়নি</div>';
-                } else {
-                    data.top_products.forEach(p => {
-                        const price = p.sale_price || p.price;
-                        topHtml += `
-                        <div class="flex items-center gap-3 py-2">
-                            <img src="${p.image}" class="w-10 h-10 object-cover rounded-xl border">
-                            <div class="flex-1 min-w-0">
-                                <h5 class="font-bold text-slate-800 truncate text-xs">${p.title}</h5>
-                                <span class="text-[11px] text-slate-400">স্টক: ${p.stock} টি</span>
-                            </div>
-                            <span class="font-bold text-emerald-700 font-mono text-xs">৳${price.toLocaleString('en-IN')}</span>
-                        </div>
-                        `;
-                    });
-                }
-                document.getElementById('top-products-list').innerHTML = topHtml;
 
                 // Render Recent Orders Table
                 let orderRows = '';
@@ -353,48 +328,6 @@
                 loadAdminDashboard();
             } else {
                 showToast('ত্রুটি', res.message, 'error');
-            }
-        });
-    }
-
-    function renderSalesChart(labels, data) {
-        const ctx = document.getElementById('salesChart').getContext('2d');
-        if (salesChartInstance) salesChartInstance.destroy();
-
-        salesChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'মোট বিক্রি (BDT ৳)',
-                    data: data,
-                    borderColor: '#0284c7',
-                    backgroundColor: 'rgba(2, 132, 199, 0.1)',
-                    tension: 0.35,
-                    fill: true,
-                    borderWidth: 3,
-                    pointBackgroundColor: '#0284c7',
-                    pointRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        ticks: {
-                            callback: function(val) { return '৳' + val.toLocaleString('en-IN'); },
-                            font: { size: 10 }
-                        }
-                    },
-                    x: {
-                        ticks: { font: { size: 10 } }
-                    }
-                }
             }
         });
     }
