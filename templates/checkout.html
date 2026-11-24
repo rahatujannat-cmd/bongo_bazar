@@ -13,7 +13,28 @@
     <form id="checkout-form" novalidate onsubmit="handleCheckout(event)" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <!-- Left: Address & Payment (2 cols) -->
-        <div class="lg:col-span-2 space-y-8">
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Authenticated Customer Info -->
+            {% if g.user %}
+            <div class="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                        {{ g.user.name[:1] }}
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-slate-900">{{ g.user.name }} হিসেবে অর্ডার করছেন</span>
+                            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">লগইনকৃত গ্রাহক</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5">{{ g.user.phone or g.user.email }}</p>
+                    </div>
+                </div>
+                <a href="/login?next=/checkout" class="text-xs text-emerald-700 hover:text-emerald-800 hover:underline font-semibold">
+                    অ্যাকাউন্ট বদলাবেন?
+                </a>
+            </div>
+            {% endif %}
             
             <!-- Step 1: Customer Contact & Shipping Address -->
             <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-5">
@@ -240,7 +261,7 @@
         const orderData = {
             customer_name: name,
             customer_phone: phone,
-            customer_email: document.getElementById('cust-email').value.trim() || 'guest@bongobazaar.com',
+            customer_email: document.getElementById('cust-email').value.trim() || '{{ g.user.email if g.user and g.user.email else "" }}',
             shipping_district: district,
             shipping_thana: thana || district,
             shipping_address: address,
@@ -270,6 +291,11 @@
                 setTimeout(() => {
                     window.location.href = `/order-confirmation/${data.order_number}`;
                 }, 600);
+            } else if (res.status === 401 || (data && data.require_login)) {
+                showToast('লগইন প্রয়োজন', (data && data.message) || 'অর্ডার করতে অনুগ্রহ করে লগইন করুন', 'warning');
+                setTimeout(() => {
+                    window.location.href = (data && data.redirect) || '/login?next=/checkout';
+                }, 1000);
             } else {
                 btn.disabled = false;
                 btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i><span>অর্ডার নিশ্চিত করুন (Confirm Order)</span>`;

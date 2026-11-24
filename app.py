@@ -125,6 +125,8 @@ def cart_page():
 
 @app.route('/checkout')
 def checkout_page():
+    if not g.user:
+        return redirect(url_for('login_page', next='/checkout'))
     return render_template('checkout.html')
 
 @app.route('/order-confirmation/<order_number>')
@@ -160,14 +162,16 @@ def account_page():
 
 @app.route('/login')
 def login_page():
+    next_url = request.args.get('next') or url_for('account_page')
     if g.user:
-        return redirect(url_for('account_page'))
+        return redirect(next_url)
     return render_template('auth.html', initial_tab='login')
 
 @app.route('/register')
 def register_page():
+    next_url = request.args.get('next') or url_for('account_page')
     if g.user:
-        return redirect(url_for('account_page'))
+        return redirect(next_url)
     return render_template('auth.html', initial_tab='register')
 
 @app.route('/about')
@@ -557,17 +561,25 @@ def api_validate_coupon():
 # --- Orders & Checkout APIs ---
 @app.route('/api/orders/create', methods=['POST'])
 def api_create_order():
+    if not g.user:
+        return jsonify({
+            'success': False,
+            'message': 'অর্ডার সম্পন্ন করার জন্য অনুগ্রহ করে প্রথমে লগইন করুন বা অ্যাকাউন্ট তৈরি করুন।',
+            'require_login': True,
+            'redirect': '/login?next=/checkout'
+        }), 401
+
     try:
         data = request.get_json() or {}
-        customer_name = (data.get('customer_name') or '').strip()
-        customer_email = (data.get('customer_email') or '').strip()
-        customer_phone = (data.get('customer_phone') or '').strip()
+        customer_name = (data.get('customer_name') or (g.user.get('name') if g.user else '') or '').strip()
+        customer_email = (data.get('customer_email') or (g.user.get('email') if g.user else '') or '').strip()
+        customer_phone = (data.get('customer_phone') or (g.user.get('phone') if g.user else '') or '').strip()
         shipping_address = (data.get('shipping_address') or '').strip()
         shipping_district = (data.get('shipping_district') or 'Dhaka').strip()
         shipping_thana = (data.get('shipping_thana') or '').strip()
         delivery_type = (data.get('delivery_type') or 'Standard').strip()
-        payment_method = (data.get('payment_method') or 'COD').strip()
-        transaction_id = (data.get('transaction_id') or '').strip()
+        payment_method = (data.get('payment_method') or 'Cash on Delivery (ক্যাশ অন ডেলিভারি)').strip()
+        transaction_id = (data.get('transaction_id') or 'COD').strip()
         notes = (data.get('notes') or '').strip()
         coupon_code = (data.get('coupon_code') or '').strip().upper()
         items = data.get('items', [])
@@ -603,7 +615,7 @@ def api_create_order():
         payment_status = 'Pending'
         order_status = 'Pending'
 
-        user_id = g.user['id'] if g.user else None
+        user_id = g.user['id']
 
         conn = get_db()
         c = conn.cursor()

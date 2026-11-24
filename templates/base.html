@@ -259,9 +259,15 @@
                 <a href="/cart" onclick="closeCartDrawer()" class="py-2.5 px-4 text-center border border-slate-300 hover:bg-white text-slate-700 text-xs font-bold rounded-xl transition-colors">
                     সম্পূর্ণ কার্ট
                 </a>
+                {% if not g.user %}
+                <a href="/login?next=/checkout" onclick="closeCartDrawer()" class="py-2.5 px-4 text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all">
+                    লগইন ও চেকআউট &rarr;
+                </a>
+                {% else %}
                 <a href="/checkout" onclick="closeCartDrawer()" class="py-2.5 px-4 text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all">
                     চেকআউট করুন &rarr;
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>

@@ -16,6 +16,17 @@
             <p class="text-xs text-slate-500 mt-1">আপনার অ্যাকাউন্ট দিয়ে সহজে অর্ডার ও ট্র্যাক করুন</p>
         </div>
 
+        <!-- Next Alert if redirected from checkout -->
+        <div id="checkout-auth-alert" class="hidden mb-5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-xs text-emerald-900 shadow-sm">
+            <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0">
+                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+            </div>
+            <div>
+                <p class="font-bold">অর্ডার সম্পন্ন করার জন্য লগইন করুন</p>
+                <p class="text-[11px] text-emerald-700 mt-0.5">লগইন বা সাইন-আপ করার পরপরই সরাসরি চেকআউট পৃষ্ঠায় ফেরত নিয়ে যাওয়া হবে।</p>
+            </div>
+        </div>
+
         <!-- Tabs (Login vs Register) -->
         <div class="flex rounded-2xl bg-slate-100 p-1 mb-6 text-xs font-bold">
             <button type="button" onclick="switchAuthTab('login')" id="tab-btn-login" class="flex-1 py-2 rounded-xl bg-white text-emerald-700 shadow-sm transition-all">
@@ -108,9 +119,12 @@
         .then(data => {
             if (data.success) {
                 showToast('লগইন সফল!', data.message, 'success');
+                const nextUrl = new URLSearchParams(window.location.search).get('next');
                 setTimeout(() => {
                     if (data.user.role === 'admin') {
                         window.location.href = '/admin';
+                    } else if (nextUrl) {
+                        window.location.href = nextUrl;
                     } else {
                         window.location.href = '/account';
                     }
@@ -137,8 +151,13 @@
         .then(data => {
             if (data.success) {
                 showToast('রেজিস্ট্রেশন সফল!', data.message, 'success');
+                const nextUrl = new URLSearchParams(window.location.search).get('next');
                 setTimeout(() => {
-                    window.location.href = '/account';
+                    if (nextUrl) {
+                        window.location.href = nextUrl;
+                    } else {
+                        window.location.href = '/account';
+                    }
                 }, 600);
             } else {
                 showToast('ত্রুটি', data.message, 'error');
@@ -157,6 +176,12 @@
         const initial = "{{ initial_tab }}";
         if (initial === 'register') {
             switchAuthTab('register');
+        }
+
+        const nextUrl = new URLSearchParams(window.location.search).get('next');
+        if (nextUrl && nextUrl.includes('checkout')) {
+            const alertBox = document.getElementById('checkout-auth-alert');
+            if (alertBox) alertBox.classList.remove('hidden');
         }
     });
 </script>
