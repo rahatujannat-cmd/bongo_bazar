@@ -340,7 +340,7 @@ def api_me():
 @app.route('/api/admin/auth/login', methods=['POST'])
 def api_admin_login():
     data = request.get_json() or {}
-    identifier = (data.get('identifier') or '').strip()
+    identifier = (data.get('identifier') or data.get('username') or '').strip()
     password = data.get('password', '')
 
     if not identifier or not password:
