@@ -22,6 +22,13 @@ app.config['JSON_SORT_KEYS'] = False
 init_db()
 seed_db()
 
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads', 'products')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif', 'avif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.before_request
 def load_sessions():
     # 1. Load Customer Session
@@ -887,6 +894,27 @@ def api_admin_stats():
         },
         'recent_orders': recent_orders
     })
+
+@app.route('/api/admin/upload-image', methods=['POST'])
+@admin_required
+def api_admin_upload_image():
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'message': 'কোনো ছবি নির্বাচন করা হয়নি'}), 400
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'ফাইলের নাম খালি'}), 400
+    if file and allowed_file(file.filename):
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        unique_name = f"prod_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{random.randint(1000, 9999)}.{ext}"
+        filepath = os.path.join(UPLOAD_FOLDER, unique_name)
+        file.save(filepath)
+        image_url = f"/static/uploads/products/{unique_name}"
+        return jsonify({
+            'success': True,
+            'message': 'ছবি সফলভাবে আপলোড হয়েছে!',
+            'image_url': image_url
+        })
+    return jsonify({'success': False, 'message': 'শুধুমাত্র JPG, PNG, WEBP, AVIF বা GIF ফাইল গ্রহণযোগ্য'}), 400
 
 @app.route('/api/admin/products', methods=['GET', 'POST'])
 @admin_required

@@ -28,7 +28,6 @@
                         <th class="p-4">ক্যাটাগরি</th>
                         <th class="p-4">মূল্য (৳)</th>
                         <th class="p-4">ইনভেন্টরি স্টক</th>
-                        <th class="p-4">ব্যাজ</th>
                         <th class="p-4 text-right">একশন</th>
                     </tr>
                 </thead>
@@ -95,9 +94,39 @@
                 </div>
             </div>
 
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">মূল ছবির URL (Image Link)</label>
-                <input type="url" id="prod-image" placeholder="https://images.unsplash.com/..." class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+            <!-- Product Image: Direct Upload OR Image URL -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <div class="flex items-center justify-between">
+                    <label class="block font-bold text-slate-800 text-xs">
+                        পণ্যের ছবি (সরাসরি ফাইল আপলোড করুন অথবা লিংক দিন) <span class="text-red-500">*</span>
+                    </label>
+                    <span id="upload-status" class="text-[11px] font-bold text-purple-600 hidden">আপলোড হচ্ছে...</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                    <!-- Option 1: File Upload -->
+                    <div>
+                        <span class="block text-[11px] font-semibold text-slate-600 mb-1">অপশন ১: কম্পিউটার/মোবাইল থেকে ছবি সিলেক্ট করুন</span>
+                        <input type="file" id="prod-image-file" accept="image/*" onchange="handleImageFileUpload(this)" class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer border rounded-xl p-1 bg-white">
+                    </div>
+
+                    <!-- Option 2: Image URL -->
+                    <div>
+                        <span class="block text-[11px] font-semibold text-slate-600 mb-1">অপশন ২: অথবা ছবির সরাসরি URL লিংক পেস্ট করুন</span>
+                        <input type="url" id="prod-image" oninput="updateImagePreview(this.value)" placeholder="https://..." class="w-full p-2.5 border rounded-xl bg-white outline-none focus:ring-2 focus:ring-purple-500 text-xs font-mono">
+                    </div>
+                </div>
+
+                <!-- Image Preview Box -->
+                <div id="image-preview-container" class="hidden flex items-center gap-3 pt-2 border-t border-slate-200">
+                    <img id="image-preview" src="" alt="Preview" class="w-14 h-14 object-cover rounded-xl border bg-white shadow-sm">
+                    <div class="text-[11px]">
+                        <span class="font-bold text-emerald-700 flex items-center gap-1">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5 inline"></i> ছবি প্রস্তুত আছে
+                        </span>
+                        <span id="image-preview-url" class="text-slate-400 font-mono truncate max-w-xs block"></span>
+                    </div>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -113,14 +142,7 @@
 
             <div>
                 <label class="block font-bold text-slate-700 mb-1">পণ্যের বিবরণ (বাংলায়)</label>
-                <textarea id="prod-desc-bn" rows="2" placeholder="পণ্যের খাঁটি গুণাবলী ও ব্যবহারের সুবিধা..." class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500"></textarea>
-            </div>
-
-            <div class="flex items-center gap-6 pt-2">
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" id="prod-is-featured" class="rounded text-purple-600 focus:ring-purple-500">
-                    <span class="font-bold text-slate-700">ফিচার্ড প্রোডাক্ট হিসেবে চিহ্নিত করুন</span>
-                </label>
+                <textarea id="prod-desc-bn" rows="2" placeholder="পণ্যের গুণাবলী ও ব্যবহারের সুবিধা..." class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500"></textarea>
             </div>
 
             <div class="flex justify-end gap-3 pt-4 border-t">
@@ -167,9 +189,6 @@
                                 ${p.stock} টি অবশিষ্ট
                             </span>
                         </td>
-                        <td class="p-4 space-x-1">
-                            ${p.is_featured ? '<span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[9px] font-bold">Featured</span>' : '<span class="text-slate-300">-</span>'}
-                        </td>
                         <td class="p-4 text-right space-x-2">
                             <a href="/product/${p.id}" target="_blank" class="p-1.5 text-slate-400 hover:text-slate-700" title="দেখুন">
                                 <i data-lucide="eye" class="w-4 h-4 inline"></i>
@@ -188,7 +207,7 @@
                 if (adminProductsList.length === 0) {
                     tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="p-12 text-center text-slate-400">
+                        <td colspan="5" class="p-12 text-center text-slate-400">
                             <div class="flex flex-col items-center justify-center space-y-3">
                                 <div class="w-16 h-16 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
                                     <i data-lucide="package-open" class="w-8 h-8"></i>
@@ -210,6 +229,56 @@
             });
     }
 
+    function handleImageFileUpload(input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        const statusEl = document.getElementById('upload-status');
+        statusEl.textContent = 'আপলোড হচ্ছে...';
+        statusEl.className = 'text-[11px] font-bold text-purple-600 block animate-pulse';
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        fetch('/api/admin/upload-image', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                statusEl.textContent = '✓ আপলোড সম্পন্ন!';
+                statusEl.className = 'text-[11px] font-bold text-emerald-600 block';
+                document.getElementById('prod-image').value = data.image_url;
+                updateImagePreview(data.image_url);
+                showToast('সফল!', 'ছবি সফলভাবে আপলোড হয়েছে', 'success');
+            } else {
+                statusEl.textContent = '✗ আপলোড ব্যর্থ';
+                statusEl.className = 'text-[11px] font-bold text-red-600 block';
+                showToast('ত্রুটি', data.message, 'error');
+            }
+        })
+        .catch(err => {
+            statusEl.textContent = '✗ নেটওয়ার্ক সমস্যা';
+            statusEl.className = 'text-[11px] font-bold text-red-600 block';
+            showToast('ত্রুটি', 'ছবি আপলোড করতে ব্যর্থ হয়েছে', 'error');
+        });
+    }
+
+    function updateImagePreview(url) {
+        const previewContainer = document.getElementById('image-preview-container');
+        const previewImg = document.getElementById('image-preview');
+        const previewUrlText = document.getElementById('image-preview-url');
+
+        if (url && url.trim().length > 0) {
+            previewImg.src = url.trim();
+            previewUrlText.textContent = url.trim();
+            previewContainer.classList.remove('hidden');
+        } else {
+            previewContainer.classList.add('hidden');
+            previewImg.src = '';
+        }
+    }
+
     function openAddProductModal() {
         document.getElementById('modal-product-title').textContent = 'নতুন পণ্য যুক্ত করুন';
         document.getElementById('prod-edit-id').value = '';
@@ -220,10 +289,12 @@
         document.getElementById('prod-price').value = '';
         document.getElementById('prod-stock').value = 15;
         document.getElementById('prod-image').value = '';
+        document.getElementById('prod-image-file').value = '';
+        document.getElementById('upload-status').className = 'hidden';
+        updateImagePreview('');
         document.getElementById('prod-colors').value = 'Default';
         document.getElementById('prod-sizes').value = 'Standard';
         document.getElementById('prod-desc-bn').value = '';
-        document.getElementById('prod-is-featured').checked = false;
 
         document.getElementById('product-modal').classList.remove('hidden');
     }
@@ -245,8 +316,10 @@
         document.getElementById('prod-price').value = p.price;
         document.getElementById('prod-stock').value = p.stock;
         document.getElementById('prod-image').value = p.image || '';
+        document.getElementById('prod-image-file').value = '';
+        document.getElementById('upload-status').className = 'hidden';
+        updateImagePreview(p.image || '');
         document.getElementById('prod-desc-bn').value = p.description_bn || p.description;
-        document.getElementById('prod-is-featured').checked = p.is_featured === 1;
 
         document.getElementById('product-modal').classList.remove('hidden');
     }
@@ -256,6 +329,12 @@
         const editId = document.getElementById('prod-edit-id').value;
         const colors = document.getElementById('prod-colors').value.split(',').map(s => s.trim()).filter(Boolean);
         const sizes = document.getElementById('prod-sizes').value.split(',').map(s => s.trim()).filter(Boolean);
+        const imgVal = document.getElementById('prod-image').value.trim();
+
+        if (!imgVal) {
+            showToast('ত্রুটি', 'অনুগ্রহ করে পণ্যের ছবি আপলোড করুন অথবা ছবির লিংক দিন', 'error');
+            return;
+        }
 
         const payload = {
             title: document.getElementById('prod-title').value.trim(),
@@ -266,13 +345,13 @@
             price: parseFloat(document.getElementById('prod-price').value),
             sale_price: null,
             stock: parseInt(document.getElementById('prod-stock').value),
-            image: document.getElementById('prod-image').value.trim(),
+            image: imgVal,
             colors: colors,
             sizes: sizes,
             description: document.getElementById('prod-desc-bn').value.trim(),
             description_bn: document.getElementById('prod-desc-bn').value.trim(),
-            is_featured: document.getElementById('prod-is-featured').checked,
-            is_flash_sale: false
+            is_featured: 0,
+            is_flash_sale: 0
         };
 
         const method = editId ? 'PUT' : 'POST';
