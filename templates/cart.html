@@ -59,11 +59,6 @@
                         <span id="summary-shipping" class="font-bold text-slate-800 font-mono">৳৬০</span>
                     </div>
 
-                    <div id="summary-discount-row" class="hidden flex justify-between text-emerald-600 font-bold">
-                        <span>কুপন ছাড় (<span id="summary-coupon-name"></span>):</span>
-                        <span id="summary-discount" class="font-mono">-৳০</span>
-                    </div>
-
                     <div class="pt-3 border-t border-slate-200 flex justify-between items-baseline">
                         <span class="font-black text-slate-900 text-base">সর্বমোট প্রদেয়:</span>
                         <span id="summary-grand-total" class="font-black text-xl text-emerald-700 font-mono">৳০</span>
@@ -92,27 +87,6 @@
                 <a href="/shop" class="block text-center text-xs font-semibold text-slate-500 hover:text-emerald-600">
                     &larr; আরও পণ্য কেনাকাটা করুন
                 </a>
-            </div>
-
-            <!-- Coupon Input Card -->
-            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-                <h4 class="text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
-                    <i data-lucide="tag" class="w-4 h-4 text-emerald-600"></i>
-                    <span>ডিসকাউন্ট কুপন কোড দিন</span>
-                </h4>
-                <div class="flex gap-2">
-                    <input type="text" id="coupon-code-input" placeholder="যেমন: EID20" class="flex-1 uppercase font-mono px-3 py-2 text-xs border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
-                    <button type="button" onclick="applyCouponCode()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors">
-                        প্রয়োগ
-                    </button>
-                </div>
-                <div class="mt-3 text-[11px] text-slate-500">
-                    <p class="font-semibold text-emerald-700">উপলব্ধ কুপন সমূহ:</p>
-                    <div class="flex flex-wrap gap-1 mt-1">
-                        <button onclick="document.getElementById('coupon-code-input').value='EID20'; applyCouponCode();" class="px-2 py-0.5 bg-emerald-50 text-emerald-800 rounded border border-emerald-200 font-mono">EID20 (20% Off)</button>
-                        <button onclick="document.getElementById('coupon-code-input').value='BONGO100'; applyCouponCode();" class="px-2 py-0.5 bg-slate-50 text-slate-800 rounded border border-slate-200 font-mono">BONGO100 (৳100 Off)</button>
-                    </div>
-                </div>
             </div>
 
         </div>
@@ -203,50 +177,11 @@
 
     function updateTotals() {
         const subtotal = Cart.getSubtotal();
-        const total = Math.max(0, subtotal - couponDiscount + shippingFee);
+        const total = subtotal + shippingFee;
 
         document.getElementById('summary-subtotal').textContent = `৳${subtotal.toLocaleString('en-IN')}`;
         document.getElementById('summary-shipping').textContent = `৳${shippingFee.toLocaleString('en-IN')}`;
         document.getElementById('summary-grand-total').textContent = `৳${total.toLocaleString('en-IN')}`;
-
-        const discRow = document.getElementById('summary-discount-row');
-        if (couponDiscount > 0 && appliedCoupon) {
-            discRow.classList.remove('hidden');
-            document.getElementById('summary-coupon-name').textContent = appliedCoupon;
-            document.getElementById('summary-discount').textContent = `-৳${couponDiscount.toLocaleString('en-IN')}`;
-        } else {
-            discRow.classList.add('hidden');
-        }
-    }
-
-    function applyCouponCode() {
-        const code = document.getElementById('coupon-code-input').value.trim().toUpperCase();
-        if (!code) {
-            showToast('কুপন কোড দিন', 'অনুগ্রহ করে কুপন কোড ইনপুট করুন', 'warning');
-            return;
-        }
-
-        const subtotal = Cart.getSubtotal();
-        fetch('/api/coupons/validate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: code, subtotal: subtotal })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                couponDiscount = data.discount;
-                appliedCoupon = data.code;
-                sessionStorage.setItem('bongobazaar_applied_coupon', JSON.stringify({ code: data.code, discount: data.discount }));
-                showToast('সফল!', data.message, 'success');
-                updateTotals();
-            } else {
-                couponDiscount = 0;
-                appliedCoupon = null;
-                showToast('কুপন ত্রুটি', data.message, 'error');
-                updateTotals();
-            }
-        });
     }
 
     document.addEventListener('DOMContentLoaded', () => {

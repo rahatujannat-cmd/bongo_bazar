@@ -101,15 +101,11 @@
                     </div>
                 </div>
 
-                <!-- Stock / Special toggles -->
+                <!-- Stock toggles -->
                 <div class="space-y-2 pt-2 border-t text-xs">
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="stock-only-checkbox" onchange="applyFilters()" class="rounded text-emerald-600 focus:ring-emerald-500">
                         <span class="text-slate-700 font-medium">শুধুমাত্র ইন-স্টক পণ্য</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="flash-sale-checkbox" onchange="applyFilters()" class="rounded text-emerald-600 focus:ring-emerald-500">
-                        <span class="text-slate-700 font-medium">ফ্ল্যাশ সেল ডিসকাউন্ট 🔥</span>
                     </label>
                 </div>
 
@@ -266,23 +262,13 @@
         let html = '';
 
         products.forEach(p => {
-            const hasSale = p.sale_price && p.sale_price < p.price;
-            const currentPrice = hasSale ? p.sale_price : p.price;
-            const discountPct = hasSale ? Math.round(((p.price - p.sale_price) / p.price) * 100) : 0;
-
             html += `
             <div class="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm product-card flex flex-col">
                 <div class="relative product-image-container aspect-square bg-slate-50">
                     <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover product-img">
-                    
-                    ${hasSale ? `
-                        <span class="absolute top-2.5 left-2.5 px-2 py-0.5 bg-red-600 text-white text-[10px] font-black rounded-lg shadow">
-                            -${discountPct}%
-                        </span>
-                    ` : ''}
 
                     <button 
-                        onclick="Wishlist.toggle({id: ${p.id}, title: '${p.title.replace(/'/g, "\\'")}', price: ${currentPrice}, image: '${p.image}'})"
+                        onclick="Wishlist.toggle({id: ${p.id}, title: '${p.title.replace(/'/g, "\\'")}', price: ${p.price}, image: '${p.image}'})"
                         data-wishlist-id="${p.id}"
                         class="absolute top-2.5 right-2.5 p-2 rounded-full bg-white/90 backdrop-blur-sm text-slate-400 hover:text-red-500 shadow-sm transition-colors"
                     >
@@ -310,13 +296,12 @@
 
                     <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                         <div>
-                            <span class="text-sm sm:text-base font-black text-slate-900">৳${currentPrice.toLocaleString('en-IN')}</span>
-                            ${hasSale ? `<span class="text-[11px] text-slate-400 line-through block -mt-1">৳${p.price.toLocaleString('en-IN')}</span>` : ''}
+                            <span class="text-sm sm:text-base font-black text-slate-900">৳${p.price.toLocaleString('en-IN')}</span>
                         </div>
 
                         <div class="flex gap-1.5">
                             <button 
-                                onclick="Cart.addItem({id: ${p.id}, title: '${p.title.replace(/'/g, "\\'")}', price: ${p.price}, sale_price: ${p.sale_price || 0}, image: '${p.image}', stock: ${p.stock}})" 
+                                onclick="Cart.addItem({id: ${p.id}, title: '${p.title.replace(/'/g, "\\'")}', price: ${p.price}, image: '${p.image}', stock: ${p.stock}})" 
                                 class="p-2 sm:p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-all"
                                 title="কার্টে যোগ করুন"
                             >

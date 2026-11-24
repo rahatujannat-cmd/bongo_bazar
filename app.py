@@ -70,24 +70,14 @@ def home_page():
     c.execute('SELECT * FROM categories ORDER BY id ASC')
     categories = [dict(row) for row in c.fetchall()]
 
-    # Flash Sale Products
-    c.execute('SELECT * FROM products WHERE is_flash_sale = 1 AND stock > 0 LIMIT 6')
-    flash_products = [dict(row) for row in c.fetchall()]
-
-    # Featured Products
-    c.execute('SELECT * FROM products WHERE is_featured = 1 AND stock > 0 LIMIT 8')
-    featured_products = [dict(row) for row in c.fetchall()]
-
-    # Best Selling Products (or highest rating)
-    c.execute('SELECT * FROM products ORDER BY review_count DESC, rating DESC LIMIT 8')
+    # Products catalog
+    c.execute('SELECT * FROM products ORDER BY id DESC LIMIT 12')
     best_sellers = [dict(row) for row in c.fetchall()]
 
     conn.close()
     return render_template(
         'index.html',
         categories=categories,
-        flash_products=flash_products,
-        featured_products=featured_products,
         best_sellers=best_sellers
     )
 
@@ -608,44 +598,28 @@ def api_create_order():
             price = float(item.get('price', 0))
             subtotal += (qty * price)
 
-        # Shipping fee calculation
+        # Shipping fee calculation (Flat rate: Dhaka 60 BDT, Outside 120 BDT)
         is_inside_dhaka = 'dhaka' in shipping_district.lower()
         shipping_fee = 60.0 if is_inside_dhaka else 120.0
-        if delivery_type == 'Express':
-            shipping_fee += 60.0 # Express surcharge
 
-        # Calculate discount from coupon
         discount = 0.0
-        conn = get_db()
-        c = conn.cursor()
-
-        if coupon_code:
-            c.execute('SELECT * FROM coupons WHERE code = ? AND is_active = 1', (coupon_code,))
-            cpn = c.fetchone()
-            if cpn:
-                cpn = dict(cpn)
-                if subtotal >= cpn['min_spend']:
-                    if cpn['discount_type'] == 'percentage':
-                        discount = (subtotal * cpn['discount_value']) / 100.0
-                        if cpn['max_discount'] and discount > cpn['max_discount']:
-                            discount = cpn['max_discount']
-                    else:
-                        discount = min(cpn['discount_value'], subtotal)
-                    # Increment usage
-                    c.execute('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?', (cpn['id'],))
-
-        total_amount = max(0.0, subtotal - discount + shipping_fee)
+        coupon_code = ''
+        total_amount = subtotal + shipping_fee
 
         # Generate Order Number: BB-YYYYMMDD-XXXX
         rand_suffix = random.randint(1000, 9999)
         date_str = datetime.now().strftime('%Y%m%d')
         order_number = f"BB-{date_str}-{rand_suffix}"
 
-        # Payment Status
-        payment_status = 'Paid' if payment_method in ['bKash', 'Nagad', 'Rocket', 'Card'] else 'Pending'
-        order_status = 'Processing' if payment_status == 'Paid' else 'Pending'
+        # Standard Cash on Delivery
+        payment_method = data.get('payment_method') or 'Cash on Delivery (ক্যাশ অন ডেলিভারি)'
+        payment_status = 'Pending'
+        order_status = 'Pending'
 
         user_id = g.user['id'] if g.user else None
+
+        conn = get_db()
+        c = conn.cursor()
 
         # Insert into Orders table
         c.execute('''
