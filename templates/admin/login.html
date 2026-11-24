@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>অ্যাডমিন সিকিউর পোর্টাল - BongoBazaar Control Hub</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    
+    <style>
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 0.15; transform: scale(1); }
+            50% { opacity: 0.25; transform: scale(1.05); }
+        }
+        .glow-sphere {
+            animation: pulse-subtle 8s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4 relative overflow-hidden font-sans">
+
+    <!-- Ambient Glowing Orbs -->
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-purple-600 rounded-full blur-[128px] glow-sphere pointer-events-none"></div>
+    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-emerald-600 rounded-full blur-[128px] glow-sphere pointer-events-none"></div>
+
+    <div class="w-full max-w-md relative z-10">
+        
+        <!-- Security Badge Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 shadow-xl shadow-purple-500/20 mb-4 border border-purple-400/30">
+                <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
+            </div>
+            <h1 class="text-2xl font-black text-white tracking-tight">অ্যাডমিন কন্ট্রোল পোর্টাল</h1>
+            <p class="text-xs text-slate-400 mt-1 font-medium">BongoBazaar Isolated Management System</p>
+            
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 mt-3 rounded-full bg-purple-950/80 border border-purple-800 text-[11px] font-bold text-purple-300">
+                <i data-lucide="lock" class="w-3 h-3 text-purple-400"></i>
+                <span>নিরাপদ এনক্রিপ্টেড সংযোগ (256-bit SSL)</span>
+            </div>
+        </div>
+
+        <!-- Login Card -->
+        <div class="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-7 sm:p-8 shadow-2xl space-y-6">
+            
+            <!-- Alert Box (Hidden by default) -->
+            <div id="login-alert" class="hidden p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2.5">
+                <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0 text-red-400"></i>
+                <span id="login-alert-text">ব্যবহারকারীর নাম অথবা পাসওয়ার্ড সঠিক নয়</span>
+            </div>
+
+            <form id="admin-login-form" onsubmit="handleAdminLogin(event)" class="space-y-4">
+                
+                <!-- Username / Email -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">
+                        অ্যাডমিন ইউজারনেম বা ইমেইল
+                    </label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
+                            <i data-lucide="user" class="w-4 h-4"></i>
+                        </span>
+                        <input 
+                            type="text" 
+                            id="admin-username" 
+                            required 
+                            placeholder="admin / admin@bongobazaar.com" 
+                            class="w-full pl-10 pr-4 py-3 bg-slate-950/80 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-mono"
+                        >
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-bold text-slate-300">
+                            গোপন পাসওয়ার্ড
+                        </label>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
+                            <i data-lucide="key-round" class="w-4 h-4"></i>
+                        </span>
+                        <input 
+                            type="password" 
+                            id="admin-password" 
+                            required 
+                            placeholder="••••••••••••" 
+                            class="w-full pl-10 pr-10 py-3 bg-slate-950/80 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-mono"
+                        >
+                        <button 
+                            type="button" 
+                            onclick="togglePasswordVisibility()" 
+                            class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-500 hover:text-slate-300"
+                        >
+                            <i id="eye-icon" data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit" 
+                    id="submit-btn" 
+                    class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-black shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 mt-2"
+                >
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    <span id="btn-text">অ্যাডমিন প্যানেলে প্রবেশ করুন</span>
+                </button>
+            </form>
+
+            <!-- Security Notice -->
+            <div class="pt-4 border-t border-slate-800/80 text-center">
+                <p class="text-[11px] text-slate-500 leading-relaxed">
+                    ⚠️ এটি একটি সুরক্ষিত অভ্যন্তরীণ কন্ট্রোল প্যানেল। অনুমতিহীন প্রবেশের চেষ্টা করলে আইপি অ্যাড্রেস স্বয়ংক্রিয়ভাবে ব্লক করা হবে।
+                </p>
+                <div class="mt-3">
+                    <a href="/" class="text-[11px] text-purple-400 hover:text-purple-300 font-semibold inline-flex items-center gap-1">
+                        <i data-lucide="arrow-left" class="w-3 h-3"></i>
+                        <span>মূল ওয়েবসাইটে ফিরে যান</span>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Copyright Footer -->
+        <p class="text-center text-[11px] text-slate-600 mt-6">
+            &copy; 2026 BongoBazaar. Isolated Secure Admin Layer.
+        </p>
+
+    </div>
+
+    <script>
+        function togglePasswordVisibility() {
+            const passInput = document.getElementById('admin-password');
+            const eyeIcon = document.getElementById('eye-icon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                passInput.type = 'password';
+                eyeIcon.setAttribute('data-lucide', 'eye');
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        async function handleAdminLogin(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById('login-alert');
+            const alertText = document.getElementById('login-alert-text');
+            const submitBtn = document.getElementById('submit-btn');
+            const btnText = document.getElementById('btn-text');
+
+            const username = document.getElementById('admin-username').value.trim();
+            const password = document.getElementById('admin-password').value;
+
+            alertBox.classList.add('hidden');
+            submitBtn.disabled = true;
+            btnText.textContent = 'যাচাই করা হচ্ছে...';
+
+            try {
+                const res = await fetch('/api/admin/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier: username, password: password })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    btnText.textContent = 'প্রবেশ সফল! রিডাইরেক্ট হচ্ছে...';
+                    submitBtn.classList.remove('from-purple-600', 'to-indigo-600');
+                    submitBtn.classList.add('bg-emerald-600');
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '/admin';
+                    }, 500);
+                } else {
+                    alertBox.classList.remove('hidden');
+                    alertText.textContent = data.message || 'ভুল ইউজারনেম বা পাসওয়ার্ড!';
+                    submitBtn.disabled = false;
+                    btnText.textContent = 'অ্যাডমিন প্যানেলে প্রবেশ করুন';
+                }
+            } catch (err) {
+                alertBox.classList.remove('hidden');
+                alertText.textContent = 'নেটওয়ার্ক সংযোগে সমস্যা হয়েছে, পুনরায় চেষ্টা করুন';
+                submitBtn.disabled = false;
+                btnText.textContent = 'অ্যাডমিন প্যানেলে প্রবেশ করুন';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

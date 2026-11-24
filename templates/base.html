@@ -131,16 +131,10 @@
                             <div class="px-4 py-2 border-b border-slate-100">
                                 <p class="text-xs text-slate-400">সাইন ইন করা আছেন:</p>
                                 <p class="text-sm font-bold text-slate-800 truncate">{{ g.user.name }}</p>
-                                <span class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded {% if g.user.role == 'admin' %}bg-purple-100 text-purple-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
-                                    {{ g.user.role.upper() }}
+                                <span class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-100 text-emerald-700">
+                                    গ্রাহক (Customer)
                                 </span>
                             </div>
-
-                            {% if g.user.role == 'admin' %}
-                                <a href="/admin" class="flex items-center gap-2 px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-semibold">
-                                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> অ্যাডমিন ড্যাশবোর্ড
-                                </a>
-                            {% endif %}
 
                             <a href="/account" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                                 <i data-lucide="user" class="w-4 h-4 text-slate-400"></i> আমার প্রোফাইল
@@ -375,11 +369,8 @@
                 <div class="pt-2 border-t border-slate-800">
                     <p class="text-[11px] text-slate-400 mb-2">১-ক্লিক ডেমো এক্সেস:</p>
                     <div class="flex gap-2">
-                        <button onclick="loginAsDemo('customer')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-semibold rounded border border-slate-700">
-                            ডেমো কাস্টমার
-                        </button>
-                        <button onclick="loginAsDemo('admin')" class="px-2.5 py-1 bg-purple-900/60 hover:bg-purple-800 text-purple-300 text-xs font-semibold rounded border border-purple-700">
-                            ডেমো অ্যাডমিন
+                        <button onclick="loginAsDemo('customer')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-semibold rounded-lg border border-slate-700">
+                            টেস্ট কাস্টমার লগইন
                         </button>
                     </div>
                 </div>
@@ -393,7 +384,7 @@
                 <a href="/terms" class="hover:text-slate-400">শর্তাবলি</a>
                 <a href="/returns" class="hover:text-slate-400">রিফান্ড পলিসি</a>
                 <a href="/privacy" class="hover:text-slate-400">প্রাইভেসি</a>
-                <a href="/admin" class="hover:text-slate-400">অ্যাডমিন প্যানেল</a>
+                <a href="/contact" class="hover:text-slate-400">যোগাযোগ</a>
             </div>
         </div>
     </footer>

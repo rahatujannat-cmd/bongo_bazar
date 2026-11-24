@@ -23,7 +23,8 @@ init_db()
 seed_db()
 
 @app.before_request
-def load_logged_in_user():
+def load_sessions():
+    # 1. Load Customer Session
     user_id = session.get('user_id')
     if user_id is None:
         g.user = None
@@ -35,11 +36,25 @@ def load_logged_in_user():
         conn.close()
         g.user = dict(user) if user else None
 
+    # 2. Load Dedicated Admin Session (Completely isolated)
+    admin_id = session.get('admin_id')
+    if admin_id is None:
+        g.admin = None
+    else:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, username, email, name, role, avatar_url FROM admin_users WHERE id = ?', (admin_id,))
+        admin = cursor.fetchone()
+        conn.close()
+        g.admin = dict(admin) if admin else None
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not g.user or g.user.get('role') != 'admin':
-            return redirect(url_for('login_page', next=request.url, error='Admin access required'))
+        if not g.admin:
+            if request.path.startswith('/api/admin'):
+                return jsonify({'success': False, 'message': 'অননুমোদিত প্রবেশ! অ্যাডমিন অথেনটিকেশন আবশ্যক'}), 401
+            return redirect(url_for('admin_login_page', next=request.url))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -149,8 +164,6 @@ def account_page():
 @app.route('/login')
 def login_page():
     if g.user:
-        if g.user.get('role') == 'admin':
-            return redirect(url_for('admin_dashboard_page'))
         return redirect(url_for('account_page'))
     return render_template('auth.html', initial_tab='login')
 
@@ -181,8 +194,21 @@ def privacy_page():
     return render_template('privacy_policy.html')
 
 # ==========================================
-# ADMIN PAGE ROUTES
+# ADMIN PAGE ROUTES (ISOLATED)
 # ==========================================
+
+@app.route('/admin-login', methods=['GET'])
+@app.route('/admin/login', methods=['GET'])
+def admin_login_page():
+    if g.admin:
+        return redirect(url_for('admin_dashboard_page'))
+    return render_template('admin/login.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_id', None)
+    session.pop('admin_name', None)
+    return redirect(url_for('admin_login_page'))
 
 @app.route('/admin')
 @admin_required
@@ -210,6 +236,7 @@ def admin_coupons_page():
     return render_template('admin/coupons.html')
 
 @app.route('/admin/invoice/<order_number>')
+@admin_required
 def admin_invoice_page(order_number):
     conn = get_db()
     c = conn.cursor()
@@ -283,7 +310,7 @@ def api_login():
     cursor.execute('''
     SELECT id, name, email, phone, role, address, city, district
     FROM users
-    WHERE (email = ? OR phone = ?) AND password_hash = ?
+    WHERE (email = ? OR phone = ?) AND password_hash = ? AND role = 'customer'
     ''', (identifier.lower(), identifier, pw_hash))
     user = cursor.fetchone()
     conn.close()
@@ -292,7 +319,7 @@ def api_login():
         return jsonify({'success': False, 'message': 'ভুল ইমেইল/ফোন অথবা পাসওয়ার্ড'}), 401
 
     session['user_id'] = user['id']
-    session['role'] = user['role']
+    session['role'] = 'customer'
 
     return jsonify({
         'success': True,
@@ -302,30 +329,28 @@ def api_login():
 
 @app.route('/api/auth/demo-login', methods=['POST'])
 def api_demo_login():
-    data = request.get_json() or {}
-    role = data.get('role', 'customer') # 'admin' or 'customer'
-
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, name, email, phone, role, address, city, district FROM users WHERE role = ? LIMIT 1', (role,))
+    cursor.execute('SELECT id, name, email, phone, role, address, city, district FROM users WHERE role = ? LIMIT 1', ('customer',))
     user = cursor.fetchone()
     conn.close()
 
     if not user:
-        return jsonify({'success': False, 'message': 'Demo account not found'}), 404
+        return jsonify({'success': False, 'message': 'টেস্ট কাস্টমার অ্যাকাউন্ট পাওয়া যায়নি'}), 404
 
     session['user_id'] = user['id']
-    session['role'] = user['role']
+    session['role'] = 'customer'
 
     return jsonify({
         'success': True,
-        'message': f'লগইন সফল ({role.capitalize()})!',
+        'message': 'টেস্ট কাস্টমার লগইন সফল!',
         'user': dict(user)
     })
 
 @app.route('/api/auth/logout', methods=['POST'])
 def api_logout():
-    session.clear()
+    session.pop('user_id', None)
+    session.pop('role', None)
     return jsonify({'success': True, 'message': 'সফলভাবে লগআউট হয়েছেন'})
 
 @app.route('/api/auth/me')
@@ -333,6 +358,58 @@ def api_me():
     if not g.user:
         return jsonify({'authenticated': False, 'user': None})
     return jsonify({'authenticated': True, 'user': g.user})
+
+# --- Dedicated Isolated Admin Authentication APIs ---
+@app.route('/api/admin/auth/login', methods=['POST'])
+def api_admin_login():
+    data = request.get_json() or {}
+    identifier = (data.get('identifier') or '').strip()
+    password = data.get('password', '')
+
+    if not identifier or not password:
+        return jsonify({'success': False, 'message': 'ইউজারনেম/ইমেইল এবং পাসওয়ার্ড আবশ্যক'}), 400
+
+    pw_hash = hash_password(password)
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+    SELECT id, username, email, name, role, avatar_url
+    FROM admin_users
+    WHERE (LOWER(username) = ? OR LOWER(email) = ?) AND password_hash = ?
+    ''', (identifier.lower(), identifier.lower(), pw_hash))
+    admin = cursor.fetchone()
+
+    if not admin:
+        conn.close()
+        return jsonify({'success': False, 'message': 'ভুল অ্যাডমিন ইউজারনেম বা পাসওয়ার্ড'}), 401
+
+    admin_data = dict(admin)
+    cursor.execute('UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', (admin_data['id'],))
+    conn.commit()
+    conn.close()
+
+    # Set isolated admin session
+    session['admin_id'] = admin_data['id']
+    session['admin_name'] = admin_data['name']
+
+    return jsonify({
+        'success': True,
+        'message': 'অ্যাডমিন কন্ট্রোল প্যানেলে স্বাগতম!',
+        'redirect': '/admin',
+        'admin': admin_data
+    })
+
+@app.route('/api/admin/auth/logout', methods=['POST', 'GET'])
+def api_admin_logout():
+    session.pop('admin_id', None)
+    session.pop('admin_name', None)
+    return jsonify({'success': True, 'message': 'অ্যাডমিন সেশন সফলভাবে সমাপ্ত হয়েছে'})
+
+@app.route('/api/admin/auth/me', methods=['GET'])
+def api_admin_me():
+    if not g.admin:
+        return jsonify({'authenticated': False, 'admin': None})
+    return jsonify({'authenticated': True, 'admin': g.admin})
 
 @app.route('/api/auth/profile', methods=['PUT'])
 def api_update_profile():
@@ -901,21 +978,25 @@ def api_admin_products():
 
         slug = title.lower().replace(' ', '-').replace('/', '-')[:60] + f"-{random.randint(100, 999)}"
 
-        c.execute('''
-        INSERT INTO products (
-            title, title_bn, slug, category_id, category_name, brand,
-            description, description_bn, price, sale_price, stock, sku,
-            image, colors, sizes, is_featured, is_flash_sale
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            title, title_bn, slug, category_id, category_name, brand,
-            description, description_bn, price, sale_price, stock, sku,
-            image, colors, sizes, is_featured, is_flash_sale
-        ))
-        conn.commit()
-        new_id = c.lastrowid
-        conn.close()
-        return jsonify({'success': True, 'message': 'নতুন পণ্য সফলভাবে যুক্ত করা হয়েছে!', 'id': new_id})
+        try:
+            c.execute('''
+            INSERT INTO products (
+                title, title_bn, slug, category_id, category_name, brand,
+                description, description_bn, price, sale_price, stock, sku,
+                image, colors, sizes, is_featured, is_flash_sale
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                title, title_bn, slug, category_id, category_name, brand,
+                description, description_bn, price, sale_price, stock, sku,
+                image, colors, sizes, is_featured, is_flash_sale
+            ))
+            conn.commit()
+            new_id = c.lastrowid
+            conn.close()
+            return jsonify({'success': True, 'message': 'নতুন পণ্য সফলভাবে যুক্ত করা হয়েছে!', 'id': new_id})
+        except sqlite3.IntegrityError:
+            conn.close()
+            return jsonify({'success': False, 'message': 'এই SKU কোড দিয়ে ইতিমধ্যে একটি পণ্য রয়েছে'}), 400
 
     # GET All Products
     c.execute('SELECT * FROM products ORDER BY id DESC')

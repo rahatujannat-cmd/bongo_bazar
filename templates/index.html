@@ -54,13 +54,15 @@
                 </div>
             </div>
 
-            <!-- Hero Floating Badge / Visual Graphic (Desktop) -->
+            <!-- Hero Floating Trust Badge (Desktop) -->
             <div class="hidden lg:flex absolute right-12 bottom-12 items-center gap-4 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 max-w-xs text-white">
-                <img src="https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?w=300&auto=format&fit=crop&q=80" alt="Panjabi" class="w-16 h-16 object-cover rounded-xl border border-white/30">
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 flex-shrink-0">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                </div>
                 <div>
-                    <span class="text-[10px] uppercase font-bold text-amber-300">হট ডিল</span>
-                    <h4 class="text-xs font-bold truncate">আড়ং স্টাইল প্রিমিয়াম সিল্ক</h4>
-                    <p class="text-sm font-black text-white">৳৩,৬০০ <span class="text-xs line-through text-slate-400 font-normal">৳৪,৫০০</span></p>
+                    <span class="text-[10px] uppercase font-bold text-amber-300">১০০% ভেরিফাইড শপ</span>
+                    <h4 class="text-xs font-bold">আসল ও খাঁটি পণ্যের নিশ্চয়তা</h4>
+                    <p class="text-[11px] text-slate-200 mt-0.5">ক্যাশ অন ডেলিভারিতে কেনাকাটা</p>
                 </div>
             </div>
 
@@ -232,6 +234,14 @@
                         </div>
                     </div>
                 </div>
+                {% else %}
+                <div class="col-span-full py-10 text-center bg-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                    <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-2 text-yellow-200">
+                        <i data-lucide="sparkles" class="w-6 h-6"></i>
+                    </div>
+                    <h4 class="text-base font-bold text-white">পরবর্তী ফ্ল্যাশ সেল খুব শীঘ্রই শুরু হবে!</h4>
+                    <p class="text-xs text-amber-100 mt-1">নতুন আকর্ষণীয় মেগা অফার ও পণ্যের জন্য সাথেই থাকুন।</p>
+                </div>
                 {% endfor %}
             </div>
 
@@ -351,6 +361,18 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            {% else %}
+            <div class="col-span-full py-14 text-center bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6">
+                <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="package-search" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-base font-bold text-slate-800">শীঘ্রই নতুন কালেকশন আসছে!</h3>
+                <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">বর্তমানে নতুন কালেকশনের পণ্য প্রস্তুত করা হচ্ছে। শীঘ্রই এখানে আকর্ষণীয় সব পণ্য পাওয়া যাবে।</p>
+                <a href="/shop" class="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow transition-all">
+                    <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                    <span>শপ পেজে যান</span>
+                </a>
             </div>
             {% endfor %}
         </div>

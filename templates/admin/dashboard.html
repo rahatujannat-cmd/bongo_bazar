@@ -235,63 +235,71 @@
 
                 // Render Top Products
                 let topHtml = '';
-                data.top_products.forEach(p => {
-                    const price = p.sale_price || p.price;
-                    topHtml += `
-                    <div class="flex items-center gap-3 py-2">
-                        <img src="${p.image}" class="w-10 h-10 object-cover rounded-xl border">
-                        <div class="flex-1 min-w-0">
-                            <h5 class="font-bold text-slate-800 truncate text-xs">${p.title}</h5>
-                            <span class="text-[11px] text-slate-400">স্টক: ${p.stock} টি</span>
+                if (!data.top_products || data.top_products.length === 0) {
+                    topHtml = '<div class="text-center py-6 text-slate-400 text-xs"><i data-lucide="package" class="w-6 h-6 mx-auto mb-1 opacity-50"></i>কোনো পণ্য বিক্রিত হয়নি</div>';
+                } else {
+                    data.top_products.forEach(p => {
+                        const price = p.sale_price || p.price;
+                        topHtml += `
+                        <div class="flex items-center gap-3 py-2">
+                            <img src="${p.image}" class="w-10 h-10 object-cover rounded-xl border">
+                            <div class="flex-1 min-w-0">
+                                <h5 class="font-bold text-slate-800 truncate text-xs">${p.title}</h5>
+                                <span class="text-[11px] text-slate-400">স্টক: ${p.stock} টি</span>
+                            </div>
+                            <span class="font-bold text-emerald-700 font-mono text-xs">৳${price.toLocaleString('en-IN')}</span>
                         </div>
-                        <span class="font-bold text-emerald-700 font-mono text-xs">৳${price.toLocaleString('en-IN')}</span>
-                    </div>
-                    `;
-                });
+                        `;
+                    });
+                }
                 document.getElementById('top-products-list').innerHTML = topHtml;
 
                 // Render Recent Orders Table
                 let orderRows = '';
                 adminRecentOrdersList = data.recent_orders || [];
-                adminRecentOrdersList.forEach(o => {
-                    let pillClass = 'bg-slate-100 text-slate-700';
-                    let statusBn = 'পেন্ডিং';
-                    if (o.order_status === 'Delivered') { pillClass = 'bg-emerald-100 text-emerald-800'; statusBn = '৪. ডেলিভারি সম্পন্ন'; }
-                    if (o.order_status === 'Shipped') { pillClass = 'bg-sky-100 text-sky-800'; statusBn = '৩. ডেলিভারিতে বের হয়েছে'; }
-                    if (o.order_status === 'Processing') { pillClass = 'bg-amber-100 text-amber-800'; statusBn = '২. প্যাকিং ও প্রসেসিং'; }
-                    if (o.order_status === 'Cancelled') { pillClass = 'bg-red-100 text-red-800'; statusBn = 'বাতিল'; }
-                    if (o.order_status === 'Pending') { pillClass = 'bg-purple-100 text-purple-800'; statusBn = '১. পেন্ডিং'; }
+                if (adminRecentOrdersList.length === 0) {
+                    orderRows = '<tr><td colspan="7" class="p-8 text-center text-slate-400 text-xs font-semibold">বর্তমানে কোনো অর্ডার রেকর্ড পাওয়া যায়নি</td></tr>';
+                } else {
+                    adminRecentOrdersList.forEach(o => {
+                        let pillClass = 'bg-slate-100 text-slate-700';
+                        let statusBn = 'পেন্ডিং';
+                        if (o.order_status === 'Delivered') { pillClass = 'bg-emerald-100 text-emerald-800'; statusBn = '৪. ডেলিভারি সম্পন্ন'; }
+                        if (o.order_status === 'Shipped') { pillClass = 'bg-sky-100 text-sky-800'; statusBn = '৩. ডেলিভারিতে বের হয়েছে'; }
+                        if (o.order_status === 'Processing') { pillClass = 'bg-amber-100 text-amber-800'; statusBn = '২. প্যাকিং ও প্রসেসিং'; }
+                        if (o.order_status === 'Cancelled') { pillClass = 'bg-red-100 text-red-800'; statusBn = 'বাতিল'; }
+                        if (o.order_status === 'Pending') { pillClass = 'bg-purple-100 text-purple-800'; statusBn = '১. পেন্ডিং'; }
 
-                    orderRows += `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-4 font-mono font-bold text-purple-700">${o.order_number}</td>
-                        <td class="p-4">
-                            <div class="font-bold text-slate-800">${o.customer_name}</div>
-                            <div class="text-[11px] text-slate-400 font-mono">${o.customer_phone}</div>
-                        </td>
-                        <td class="p-4 text-slate-600">${o.shipping_district}</td>
-                        <td class="p-4">
-                            <span class="font-semibold">${o.payment_method}</span>
-                            <span class="block text-[10px] text-slate-400">(${o.payment_status})</span>
-                        </td>
-                        <td class="p-4 font-bold font-mono text-slate-800">৳${o.total_amount.toLocaleString('en-IN')}</td>
-                        <td class="p-4">
-                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${pillClass}">
-                                ${statusBn}
-                            </span>
-                        </td>
-                        <td class="p-4 text-right space-x-1 whitespace-nowrap">
-                            <button onclick="openMilestoneModal(${o.id})" class="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm inline-flex items-center gap-1">
-                                <i data-lucide="truck" class="w-3.5 h-3.5"></i>
-                                <span>মাইলস্টোন</span>
-                            </button>
-                            <a href="/admin/invoice/${o.order_number}" target="_blank" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
-                                চালান
-                            </a>
-                        </td>
-                    </tr>
-                    `;
-                });
+                        orderRows += `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-purple-700">${o.order_number}</td>
+                            <td class="p-4">
+                                <div class="font-bold text-slate-800">${o.customer_name}</div>
+                                <div class="text-[11px] text-slate-400 font-mono">${o.customer_phone}</div>
+                            </td>
+                            <td class="p-4 text-slate-600">${o.shipping_district}</td>
+                            <td class="p-4">
+                                <span class="font-semibold">${o.payment_method}</span>
+                                <span class="block text-[10px] text-slate-400">(${o.payment_status})</span>
+                            </td>
+                            <td class="p-4 font-bold font-mono text-slate-800">৳${o.total_amount.toLocaleString('en-IN')}</td>
+                            <td class="p-4">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${pillClass}">
+                                    ${statusBn}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right space-x-1 whitespace-nowrap">
+                                <button onclick="openMilestoneModal(${o.id})" class="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm inline-flex items-center gap-1">
+                                    <i data-lucide="truck" class="w-3.5 h-3.5"></i>
+                                    <span>মাইলস্টোন</span>
+                                </button>
+                                <a href="/admin/invoice/${o.order_number}" target="_blank" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+                                    চালান
+                                </a>
+                            </td>
+                        </tr>
+                        `;
+                    });
+                }
                 document.getElementById('recent-orders-tbody').innerHTML = orderRows;
                 if (window.lucide) lucide.createIcons();
             });

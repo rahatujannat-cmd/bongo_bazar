@@ -410,23 +410,19 @@ function initFlashSaleTimer() {
     setInterval(update, 1000);
 }
 
-// Demo Login Helper
+// Demo Customer Login Helper
 function loginAsDemo(role = 'customer') {
     fetch('/api/auth/demo-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: role })
+        body: JSON.stringify({ role: 'customer' })
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
             showToast('স্বাগতম!', data.message, 'success');
             setTimeout(() => {
-                if (role === 'admin') {
-                    window.location.href = '/admin';
-                } else {
-                    window.location.href = '/account';
-                }
+                window.location.href = '/account';
             }, 600);
         } else {
             showToast('লগইন ব্যর্থ', data.message, 'error');
