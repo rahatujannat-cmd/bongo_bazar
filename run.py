@@ -30,12 +30,10 @@ if __name__ == '__main__':
     print("  [✓] Server URL: http://127.0.0.1:5000")
     print("-" * 65)
     print("  ডেমো লগইন তথ্য:")
-    print("  • কাস্টমার অ্যাকাউন্ট: customer@bongobazaar.com | পাসওয়ার্ড: customer123")
-    print("  • অ্যাডমিন অ্যাকাউন্ট: admin@bongobazaar.com    | পাসওয়ার্ড: admin123")
-    print("  • ১-ক্লিক ডেমো লগইন বাটন ওয়েবসাইটে যুক্ত রয়েছে।")
+    print("  • ডেমো অ্যাকাউন্ট আর সিড করা হয় না। প্রথম অ্যাডমিন বানাতে ADMIN_PASSWORD env var ব্যবহার করুন।")
     print("=" * 65)
 
     # Automatically open browser in background thread
     threading.Thread(target=open_browser, daemon=True).start()
 
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
