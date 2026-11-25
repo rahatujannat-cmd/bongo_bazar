@@ -1,0 +1,198 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}কুপন ম্যানেজমেন্ট - BongoBazaar Admin{% endblock %}
+{% block page_title %}কুপন ম্যানেজমেন্ট{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Top Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h3 class="text-lg font-black text-slate-800">সকল কুপন তালিকা</h3>
+            <p class="text-xs text-slate-400">ডিসকাউন্ট কুপন তৈরি করুন ও মুছে ফেলুন — চেকআউটে কুপন সার্ভার থেকে যাচাই করা হয়</p>
+        </div>
+        <button onclick="openAddCouponModal()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>নতুন কুপন যোগ করুন</span>
+        </button>
+    </div>
+
+    <!-- Coupons Table -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-semibold border-b">
+                    <tr>
+                        <th class="p-4">কোড</th>
+                        <th class="p-4">ছাড়</th>
+                        <th class="p-4">সর্বনিম্ন অর্ডার</th>
+                        <th class="p-4">মেয়াদ</th>
+                        <th class="p-4">ব্যবহার</th>
+                        <th class="p-4">স্ট্যাটাস</th>
+                        <th class="p-4 text-right">একশন</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-coupons-tbody" class="divide-y divide-slate-100 font-medium">
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Add Coupon Modal -->
+<div id="coupon-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl space-y-5 my-8">
+        <div class="flex items-center justify-between border-b pb-3">
+            <h3 class="font-bold text-slate-900 text-base">নতুন কুপন যুক্ত করুন</h3>
+            <button onclick="closeCouponModal()" class="text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+
+        <form onsubmit="handleCouponSave(event)" class="space-y-4 text-xs">
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">কুপন কোড <span class="text-red-500">*</span></label>
+                <input type="text" id="coupon-code" required placeholder="যেমন: EID20" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500 uppercase font-mono">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">ছাড়ের ধরন</label>
+                    <select id="coupon-type" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="percentage">শতকরা (%)</option>
+                        <option value="fixed">নির্দিষ্ট টাকা (৳)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">ছাড়ের পরিমাণ <span class="text-red-500">*</span></label>
+                    <input type="number" id="coupon-value" required min="1" step="any" placeholder="20" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">সর্বনিম্ন অর্ডার (৳)</label>
+                    <input type="number" id="coupon-min-spend" min="0" step="any" value="0" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">সর্বোচ্চ ছাড় (৳, শুধু % এর জন্য)</label>
+                    <input type="number" id="coupon-max-discount" min="0" step="any" placeholder="ঐচ্ছিক" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">মেয়াদ (তারিখ)</label>
+                    <input type="date" id="coupon-expiry" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">ব্যবহারের সীমা</label>
+                    <input type="number" id="coupon-usage-limit" min="1" value="100" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+            </div>
+            <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition-all">কুপন তৈরি করুন</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function loadAdminCoupons() {
+        fetch('/api/admin/coupons')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) return;
+                const tbody = document.getElementById('admin-coupons-tbody');
+                if (!data.coupons || data.coupons.length === 0) {
+                    tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="p-12 text-center text-slate-400">
+                            <h4 class="font-bold text-slate-800 text-sm">বর্তমানে কোনো কুপন নেই</h4>
+                            <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1">নতুন কুপন তৈরি করতে উপরের বাটনে চাপ দিন।</p>
+                        </td>
+                    </tr>`;
+                } else {
+                    let html = '';
+                    data.coupons.forEach(cp => {
+                        const discount = cp.discount_type === 'percentage' ? cp.discount_value + '%' : '৳' + cp.discount_value;
+                        const expired = cp.expiry_date && cp.expiry_date < new Date().toISOString().slice(0, 10);
+                        const usedUp = cp.usage_limit != null && cp.used_count >= cp.usage_limit;
+                        const active = cp.is_active == 1 && !expired && !usedUp;
+                        html += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4 font-mono font-bold text-slate-900">${cp.code}</td>
+                        <td class="p-4 text-slate-600">${discount}${cp.max_discount ? ' (সর্বোচ্চ ৳' + cp.max_discount + ')' : ''}</td>
+                        <td class="p-4 text-slate-600">৳${cp.min_spend || 0}</td>
+                        <td class="p-4 text-slate-600">${cp.expiry_date || '—'}</td>
+                        <td class="p-4 text-slate-600">${cp.used_count || 0} / ${cp.usage_limit != null ? cp.usage_limit : '∞'}</td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black ${active ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-700'}">
+                                ${active ? 'সক্রিয়' : (expired ? 'মেয়াদ শেষ' : (usedUp ? 'সীমা শেষ' : 'নিষ্ক্রিয়'))}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button onclick="deleteCoupon(${cp.id})" class="p-1.5 text-slate-400 hover:text-red-600" title="মুছে ফেলুন">
+                                <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+                    });
+                    tbody.innerHTML = html;
+                }
+                if (window.lucide) lucide.createIcons();
+            });
+    }
+
+    function openAddCouponModal() {
+        document.getElementById('coupon-modal').classList.remove('hidden');
+    }
+
+    function closeCouponModal() {
+        document.getElementById('coupon-modal').classList.add('hidden');
+    }
+
+    function handleCouponSave(e) {
+        e.preventDefault();
+        const payload = {
+            code: document.getElementById('coupon-code').value,
+            discount_type: document.getElementById('coupon-type').value,
+            discount_value: parseFloat(document.getElementById('coupon-value').value),
+            min_spend: parseFloat(document.getElementById('coupon-min-spend').value) || 0,
+            max_discount: parseFloat(document.getElementById('coupon-max-discount').value) || null,
+            expiry_date: document.getElementById('coupon-expiry').value || '',
+            usage_limit: parseInt(document.getElementById('coupon-usage-limit').value) || 100
+        };
+        fetch('/api/admin/coupons', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast('সফল!', data.message, 'success');
+                closeCouponModal();
+                loadAdminCoupons();
+            } else {
+                showToast('ত্রুটি', data.message, 'error');
+            }
+        })
+        .catch(() => showToast('ত্রুটি', 'কুপন তৈরি করতে ব্যর্থ হয়েছে', 'error'));
+    }
+
+    function deleteCoupon(id) {
+        if (!confirm('এই কুপনটি কি মুছে ফেলতে চান?')) return;
+        fetch('/api/admin/coupons/' + id, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('মুছে ফেলা হয়েছে', data.message, 'info');
+                    loadAdminCoupons();
+                } else {
+                    showToast('ত্রুটি', data.message, 'error');
+                }
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAdminCoupons);
+</script>
+{% endblock %}

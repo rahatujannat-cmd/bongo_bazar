@@ -7,7 +7,11 @@ import json
 from datetime import datetime, timedelta
 from werkzeug.security import check_password_hash, generate_password_hash
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'bongobazaar.db')
+# Database location. On Render the file lives on the persistent disk:
+# set DATABASE_PATH=/var/data/bongobazaar.db in the Render env vars
+# (see render.yaml). Locally it defaults to bongobazaar.db next to
+# this file. Never commit the live database file to git.
+DB_PATH = os.environ.get('DATABASE_PATH') or os.path.join(os.path.dirname(__file__), 'bongobazaar.db')
 
 def hash_password(password: str) -> str:
     # Salted, slow hash (Werkzeug / pbkdf2). Never store plain SHA256 hashes.
@@ -21,6 +25,11 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 def get_db():
+    # Make sure the database directory exists (e.g. the Render disk
+    # mount /var/data) so the first connect does not fail.
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn

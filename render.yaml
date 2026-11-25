@@ -9,3 +9,17 @@ services:
         value: 3.11.9
       - key: SECRET_KEY
         generateValue: true
+      # Database on the persistent disk below. Without this, Render's
+      # ephemeral disk wipes products/orders/admin on every redeploy.
+      - key: DATABASE_PATH
+        value: /var/data/bongobazaar.db
+    # Persistent disk: keeps the SQLite file (and the admin account
+    # created from ADMIN_PASSWORD) across redeploys/restarts.
+    # NOTE: the first deploy after adding this disk starts with a FRESH
+    # empty database at /var/data/bongobazaar.db - products/orders from
+    # the old ephemeral disk do not carry over. Re-add products and
+    # re-create the admin (ADMIN_PASSWORD env var, one-time) after it.
+    disks:
+      - name: bongo-data
+        mountPath: /var/data
+        sizeGB: 1
