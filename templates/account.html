@@ -93,14 +93,24 @@
                             <input type="tel" id="prof-phone" value="{{ g.user.phone or '' }}" placeholder="01XXXXXXXXX" class="w-full p-2.5 border rounded-xl font-mono outline-none focus:ring-2 focus:ring-emerald-500">
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
-                                <label class="block font-bold text-slate-700 mb-1">জেলা (District)</label>
-                                <input type="text" id="prof-district" value="{{ g.user.district or 'Dhaka' }}" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+                                <label class="block font-bold text-slate-700 mb-1">বিভাগ (Division)</label>
+                                <select id="prof-division" onchange="onProfDivisionSelect(this.value)" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer">
+                                    <option value="">বিভাগ নির্বাচন করুন</option>
+                                </select>
                             </div>
                             <div>
-                                <label class="block font-bold text-slate-700 mb-1">শহর / থানা</label>
-                                <input type="text" id="prof-city" value="{{ g.user.city or '' }}" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+                                <label class="block font-bold text-slate-700 mb-1">জেলা (District)</label>
+                                <select id="prof-district" onchange="onProfDistrictSelect(this.value)" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer">
+                                    <option value="">জেলা নির্বাচন করুন</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">থানা / উপজেলা</label>
+                                <select id="prof-city" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer">
+                                    <option value="">থানা নির্বাচন করুন</option>
+                                </select>
                             </div>
                         </div>
 
@@ -124,7 +134,87 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/bangladesh_geo.js') }}"></script>
 <script>
+    let profCurrentDivKey = '';
+    let profCurrentDistKey = '';
+
+    function initProfGeo() {
+        if (!window.BDGeo) return;
+        const divSelect = document.getElementById('prof-division');
+        divSelect.innerHTML = '<option value="">বিভাগ নির্বাচন করুন</option>';
+        BDGeo.getDivisions().forEach(div => {
+            const opt = document.createElement('option');
+            opt.value = div.key;
+            opt.textContent = div.name_bn;
+            divSelect.appendChild(opt);
+        });
+
+        const savedDist = "{{ g.user.district if g.user and g.user.district else 'Dhaka' }}";
+        const savedThana = "{{ g.user.city if g.user and g.user.city else '' }}";
+        const found = BDGeo.findDivisionByDistrict(savedDist) || { divisionKey: 'Dhaka', districtKey: 'Dhaka' };
+
+        divSelect.value = found.divisionKey;
+        onProfDivisionSelect(found.divisionKey, found.districtKey, savedThana);
+    }
+
+    function onProfDivisionSelect(divKey, autoSelectDistrict = null, autoSelectThana = null) {
+        profCurrentDivKey = divKey;
+        const distSelect = document.getElementById('prof-district');
+        const thanaSelect = document.getElementById('prof-city');
+
+        if (!divKey) {
+            distSelect.innerHTML = '<option value="">আগে বিভাগ নির্বাচন করুন</option>';
+            distSelect.disabled = true;
+            thanaSelect.innerHTML = '<option value="">আগে জেলা নির্বাচন করুন</option>';
+            thanaSelect.disabled = true;
+            return;
+        }
+
+        distSelect.disabled = false;
+        distSelect.innerHTML = '<option value="">জেলা নির্বাচন করুন</option>';
+        const districts = BDGeo.getDistricts(divKey);
+        districts.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.key;
+            opt.textContent = `${d.name_bn} (${d.key})`;
+            distSelect.appendChild(opt);
+        });
+
+        if (autoSelectDistrict && BDGeo.data[divKey] && BDGeo.data[divKey].districts[autoSelectDistrict]) {
+            distSelect.value = autoSelectDistrict;
+            onProfDistrictSelect(autoSelectDistrict, autoSelectThana);
+        } else if (districts.length > 0) {
+            distSelect.value = districts[0].key;
+            onProfDistrictSelect(districts[0].key);
+        }
+    }
+
+    function onProfDistrictSelect(distKey, autoSelectThana = null) {
+        profCurrentDistKey = distKey;
+        const thanaSelect = document.getElementById('prof-city');
+
+        if (!distKey) {
+            thanaSelect.innerHTML = '<option value="">আগে জেলা নির্বাচন করুন</option>';
+            thanaSelect.disabled = true;
+            return;
+        }
+
+        thanaSelect.disabled = false;
+        thanaSelect.innerHTML = '<option value="">থানা / উপজেলা নির্বাচন করুন</option>';
+        const upazilas = BDGeo.getUpazilas(profCurrentDivKey, distKey);
+        upazilas.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u;
+            opt.textContent = u;
+            thanaSelect.appendChild(opt);
+        });
+
+        if (autoSelectThana && upazilas.includes(autoSelectThana)) {
+            thanaSelect.value = autoSelectThana;
+        }
+    }
+
     function switchAccountTab(tab) {
         ['orders', 'profile'].forEach(t => {
             document.getElementById(`acc-tab-${t}`).classList.add('hidden');
@@ -137,6 +227,10 @@
         const activeBtn = document.getElementById(`acc-tab-btn-${tab}`);
         activeBtn.classList.add('bg-emerald-50', 'text-emerald-700');
         activeBtn.classList.remove('text-slate-600');
+
+        if (tab === 'profile') {
+            initProfGeo();
+        }
     }
 
     function loadUserOrders() {
@@ -211,11 +305,19 @@
 
     function saveUserProfile(e) {
         e.preventDefault();
+        const divKey = document.getElementById('prof-division').value;
+        const distKey = document.getElementById('prof-district').value;
+        const thana = document.getElementById('prof-city').value;
+
+        const divNameBn = (window.BDGeo && BDGeo.data[divKey]) ? BDGeo.data[divKey].name_bn : divKey;
+        const distNameBn = (window.BDGeo && BDGeo.data[divKey] && BDGeo.data[divKey].districts[distKey]) ? BDGeo.data[divKey].districts[distKey].name_bn : distKey;
+
         const data = {
             name: document.getElementById('prof-name').value.trim(),
             phone: document.getElementById('prof-phone').value.trim(),
-            district: document.getElementById('prof-district').value.trim(),
-            city: document.getElementById('prof-city').value.trim(),
+            division: divNameBn,
+            district: distNameBn,
+            city: thana,
             address: document.getElementById('prof-address').value.trim()
         };
 

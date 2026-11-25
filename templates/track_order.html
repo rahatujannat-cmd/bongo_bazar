@@ -213,7 +213,8 @@
                 document.getElementById('track-order-num').textContent = o.order_number;
                 document.getElementById('track-order-date').textContent = `অর্ডার তারিখ: ${o.created_at}`;
                 document.getElementById('track-cust-name').textContent = o.customer_name;
-                document.getElementById('track-cust-address').textContent = `${o.shipping_address}, ${o.shipping_thana || ''}, ${o.shipping_district}`;
+                const fullLocation = [o.shipping_address, o.shipping_thana, o.shipping_district, o.shipping_division].filter(Boolean).join(', ');
+                document.getElementById('track-cust-address').textContent = fullLocation;
                 document.getElementById('track-cust-phone').textContent = `মোবাইল: ${o.customer_phone}`;
                 document.getElementById('track-pay-method').textContent = `${o.payment_method} (${o.payment_status})`;
                 document.getElementById('track-notes').textContent = o.notes ? `নোট: ${o.notes}` : 'নিরাপদ হ্যান্ডলিং প্রক্রিয়াধীন';

@@ -104,6 +104,7 @@ def init_db():
         customer_email TEXT NOT NULL,
         customer_phone TEXT NOT NULL,
         shipping_address TEXT NOT NULL,
+        shipping_division TEXT,
         shipping_district TEXT NOT NULL,
         shipping_thana TEXT,
         delivery_type TEXT DEFAULT 'Standard',
@@ -122,6 +123,16 @@ def init_db():
         FOREIGN KEY (user_id) REFERENCES users (id)
     )
     ''')
+
+    # Safe Schema Migrations
+    try:
+        cursor.execute("ALTER TABLE orders ADD COLUMN shipping_division TEXT")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN division TEXT")
+    except Exception:
+        pass
 
     # 6. Order Items Table
     cursor.execute('''

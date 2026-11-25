@@ -181,8 +181,8 @@
                             <span class="font-mono text-[11px] text-slate-500">${o.customer_phone}</span>
                         </td>
                         <td class="p-4 text-slate-600">
-                            <span class="font-bold text-slate-700 block">${o.shipping_district}</span>
-                            <span class="text-[10px] text-slate-400 truncate max-w-xs block">${o.shipping_address}</span>
+                            <span class="font-bold text-slate-700 block">${o.shipping_district}${o.shipping_thana ? ` (${o.shipping_thana})` : ''}</span>
+                            <span class="text-[10px] text-slate-400 truncate max-w-xs block">${o.shipping_address}${o.shipping_division ? `, ${o.shipping_division}` : ''}</span>
                         </td>
                         <td class="p-4">
                             <span class="font-bold text-slate-800">${o.payment_method}</span>
@@ -230,7 +230,7 @@
         document.getElementById('modal-order-number').textContent = order.order_number;
         document.getElementById('modal-customer-name').textContent = order.customer_name;
         document.getElementById('modal-customer-phone').textContent = order.customer_phone;
-        document.getElementById('modal-shipping-address').textContent = `${order.shipping_address}, ${order.shipping_district}`;
+        document.getElementById('modal-shipping-address').textContent = [order.shipping_address, order.shipping_thana, order.shipping_district, order.shipping_division].filter(Boolean).join(', ');
         document.getElementById('modal-tracking-notes').value = order.notes || '';
         document.getElementById('modal-customer-view-link').href = `/track?order_no=${order.order_number}`;
 

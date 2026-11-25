@@ -64,31 +64,33 @@
                         <input type="email" id="cust-email" value="{% if g.user and g.user.email %}{{ g.user.email }}{% endif %}" placeholder="example@email.com" class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">জেলা (District) <span class="text-red-500">*</span></label>
-                        <select id="cust-district" onchange="onDistrictChange(this.value)" class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500 font-semibold">
-                            <option value="Dhaka" selected>ঢাকা (Dhaka)</option>
-                            <option value="Chittagong">চট্টগ্রাম (Chittagong)</option>
-                            <option value="Sylhet">সিলেট (Sylhet)</option>
-                            <option value="Rajshahi">রাজশাহী (Rajshahi)</option>
-                            <option value="Khulna">খুলনা (Khulna)</option>
-                            <option value="Barishal">বরিশাল (Barishal)</option>
-                            <option value="Rangpur">রংপুর (Rangpur)</option>
-                            <option value="Mymensingh">ময়মনসিংহ (Mymensingh)</option>
-                            <option value="Gazipur">গাজীপুর (Gazipur)</option>
-                            <option value="Narayanganj">নারায়ণগঞ্জ (Narayanganj)</option>
-                            <option value="Comilla">কুমিল্লা (Comilla)</option>
-                        </select>
-                    </div>
+                    <!-- Cascading Location: Division -> District -> Thana/Upazila -->
+                    <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">বিভাগ (Division) <span class="text-red-500">*</span></label>
+                            <select id="cust-division" onchange="onDivisionSelect(this.value)" class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer">
+                                <option value="">বিভাগ নির্বাচন করুন</option>
+                            </select>
+                        </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">থানা / উপজেলা (Thana/Upazila) <span class="text-red-500">*</span></label>
-                        <input type="text" id="cust-thana" placeholder="যেমন: ধানমন্ডি / কোতোয়ালি" class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">জেলা (District) <span class="text-red-500">*</span></label>
+                            <select id="cust-district" onchange="onDistrictSelect(this.value)" class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer" disabled>
+                                <option value="">আগে বিভাগ নির্বাচন করুন</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">থানা / উপজেলা (Upazila) <span class="text-red-500">*</span></label>
+                            <select id="cust-thana" class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer" disabled>
+                                <option value="">আগে জেলা নির্বাচন করুন</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="sm:col-span-2">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">সম্পূর্ণ ঠিকানা (বাসা/রোড/এলাকা) <span class="text-red-500">*</span></label>
-                        <textarea id="cust-address" rows="2" placeholder="যেমন: হাউজ ১২, রোড ৪, ব্লক-সি..." class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500">{% if g.user and g.user.address %}{{ g.user.address }}{% endif %}</textarea>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">সম্পূর্ণ ঠিকানা (বাসা/রোড/এলাকা/গ্রাম) <span class="text-red-500">*</span></label>
+                        <textarea id="cust-address" rows="2" placeholder="যেমন: হাউজ ১২, রোড ৪, ব্লক-সি, এলাকা বা গ্রামের নাম..." class="w-full text-xs p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500">{% if g.user and g.user.address %}{{ g.user.address }}{% endif %}</textarea>
                     </div>
 
                     <div class="sm:col-span-2">
@@ -171,8 +173,11 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/bangladesh_geo.js') }}"></script>
 <script>
     let checkoutShippingBase = 60;
+    let currentDivisionKey = '';
+    let currentDistrictKey = '';
 
     function initCheckout() {
         if (!Cart.items || Cart.items.length === 0) {
@@ -181,8 +186,97 @@
         }
 
         renderCheckoutItems();
+        initGeoDropdowns();
         updateCheckoutTotals();
         if (window.lucide) lucide.createIcons();
+    }
+
+    function initGeoDropdowns() {
+        if (!window.BDGeo) return;
+        const divSelect = document.getElementById('cust-division');
+        divSelect.innerHTML = '<option value="">বিভাগ নির্বাচন করুন</option>';
+        const divisions = BDGeo.getDivisions();
+        divisions.forEach(div => {
+            const opt = document.createElement('option');
+            opt.value = div.key;
+            opt.textContent = div.name_bn;
+            divSelect.appendChild(opt);
+        });
+
+        // Auto select Dhaka by default or user saved district
+        const userDistrict = "{{ g.user.district if g.user and g.user.district else 'Dhaka' }}";
+        const found = BDGeo.findDivisionByDistrict(userDistrict) || { divisionKey: 'Dhaka', districtKey: 'Dhaka' };
+
+        divSelect.value = found.divisionKey;
+        onDivisionSelect(found.divisionKey, found.districtKey);
+    }
+
+    function onDivisionSelect(divisionKey, autoSelectDistrict = null) {
+        currentDivisionKey = divisionKey;
+        const distSelect = document.getElementById('cust-district');
+        const thanaSelect = document.getElementById('cust-thana');
+
+        if (!divisionKey) {
+            distSelect.innerHTML = '<option value="">আগে বিভাগ নির্বাচন করুন</option>';
+            distSelect.disabled = true;
+            thanaSelect.innerHTML = '<option value="">আগে জেলা নির্বাচন করুন</option>';
+            thanaSelect.disabled = true;
+            checkoutShippingBase = 120;
+            updateCheckoutTotals();
+            return;
+        }
+
+        distSelect.disabled = false;
+        distSelect.innerHTML = '<option value="">জেলা নির্বাচন করুন</option>';
+
+        const districts = BDGeo.getDistricts(divisionKey);
+        districts.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.key;
+            opt.textContent = `${d.name_bn} (${d.key})`;
+            distSelect.appendChild(opt);
+        });
+
+        if (autoSelectDistrict && BDGeo.data[divisionKey] && BDGeo.data[divisionKey].districts[autoSelectDistrict]) {
+            distSelect.value = autoSelectDistrict;
+            onDistrictSelect(autoSelectDistrict);
+        } else if (districts.length > 0 && divisionKey === 'Dhaka') {
+            distSelect.value = 'Dhaka';
+            onDistrictSelect('Dhaka');
+        } else {
+            thanaSelect.innerHTML = '<option value="">আগে জেলা নির্বাচন করুন</option>';
+            thanaSelect.disabled = true;
+            checkoutShippingBase = 120;
+            updateCheckoutTotals();
+        }
+    }
+
+    function onDistrictSelect(districtKey) {
+        currentDistrictKey = districtKey;
+        const thanaSelect = document.getElementById('cust-thana');
+
+        if (!districtKey) {
+            thanaSelect.innerHTML = '<option value="">আগে জেলা নির্বাচন করুন</option>';
+            thanaSelect.disabled = true;
+            checkoutShippingBase = 120;
+            updateCheckoutTotals();
+            return;
+        }
+
+        thanaSelect.disabled = false;
+        thanaSelect.innerHTML = '<option value="">থানা / উপজেলা নির্বাচন করুন</option>';
+
+        const upazilas = BDGeo.getUpazilas(currentDivisionKey, districtKey);
+        upazilas.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u;
+            opt.textContent = u;
+            thanaSelect.appendChild(opt);
+        });
+
+        // Dhaka district: 60 BDT delivery fee, other districts: 120 BDT
+        checkoutShippingBase = (districtKey === 'Dhaka') ? 60 : 120;
+        updateCheckoutTotals();
     }
 
     function renderCheckoutItems() {
@@ -203,11 +297,6 @@
         container.innerHTML = html;
     }
 
-    function onDistrictChange(district) {
-        checkoutShippingBase = district.toLowerCase() === 'dhaka' ? 60 : 120;
-        updateCheckoutTotals();
-    }
-
     function updateCheckoutTotals() {
         const subtotal = Cart.getSubtotal();
         const shipping = checkoutShippingBase;
@@ -226,8 +315,9 @@
 
         const name = document.getElementById('cust-name').value.trim();
         const phone = document.getElementById('cust-phone').value.trim();
-        const district = document.getElementById('cust-district').value;
-        const thana = document.getElementById('cust-thana').value.trim();
+        const divSelect = document.getElementById('cust-division');
+        const distSelect = document.getElementById('cust-district');
+        const thanaSelect = document.getElementById('cust-thana');
         const address = document.getElementById('cust-address').value.trim();
 
         if (!name) {
@@ -242,8 +332,30 @@
             return;
         }
 
+        const divKey = divSelect.value;
+        const distKey = distSelect.value;
+        const thanaVal = thanaSelect.value;
+
+        if (!divKey) {
+            showToast('বিভাগ নির্বাচন করুন', 'অনুগ্রহ করে আপনার ডেলিভারি বিভাগ নির্বাচন করুন', 'warning');
+            divSelect.focus();
+            return;
+        }
+
+        if (!distKey) {
+            showToast('জেলা নির্বাচন করুন', 'অনুগ্রহ করে আপনার জেলা নির্বাচন করুন', 'warning');
+            distSelect.focus();
+            return;
+        }
+
+        if (!thanaVal) {
+            showToast('থানা/উপজেলা নির্বাচন করুন', 'অনুগ্রহ করে আপনার থানা বা উপজেলা নির্বাচন করুন', 'warning');
+            thanaSelect.focus();
+            return;
+        }
+
         if (!address) {
-            showToast('ঠিকানা প্রয়োজন', 'অনুগ্রহ করে সম্পূর্ণ ডেলিভারি ঠিকানা লিখুন', 'warning');
+            showToast('ঠিকানা প্রয়োজন', 'অনুগ্রহ করে সম্পূর্ণ বিস্তারিত ঠিকানা (রোড, বাড়ি, এলাকা) লিখুন', 'warning');
             document.getElementById('cust-address').focus();
             return;
         }
@@ -258,12 +370,16 @@
         btn.disabled = true;
         btn.innerHTML = `<span class="animate-spin mr-2">&#9696;</span> প্রসেসিং হচ্ছে...`;
 
+        const divisionNameBn = (window.BDGeo && BDGeo.data[divKey]) ? BDGeo.data[divKey].name_bn : divKey;
+        const districtNameBn = (window.BDGeo && BDGeo.data[divKey] && BDGeo.data[divKey].districts[distKey]) ? BDGeo.data[divKey].districts[distKey].name_bn : distKey;
+
         const orderData = {
             customer_name: name,
             customer_phone: phone,
             customer_email: document.getElementById('cust-email').value.trim() || '{{ g.user.email if g.user and g.user.email else "" }}',
-            shipping_district: district,
-            shipping_thana: thana || district,
+            shipping_division: divisionNameBn,
+            shipping_district: districtNameBn,
+            shipping_thana: thanaVal,
             shipping_address: address,
             notes: document.getElementById('cust-notes').value.trim(),
             delivery_type: 'Standard',

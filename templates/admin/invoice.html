@@ -63,7 +63,7 @@
             <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
                 <span class="text-[10px] uppercase font-bold text-slate-400 block">ডেলিভারি ঠিকানা (Ship To):</span>
                 <p class="text-slate-700 font-medium">{{ order.shipping_address }}</p>
-                <p class="text-slate-600">{{ order.shipping_thana }}, {{ order.shipping_district }}</p>
+                <p class="text-slate-600">{{ order.shipping_thana }}, {{ order.shipping_district }}{% if order.shipping_division %}, {{ order.shipping_division }}{% endif %}</p>
                 <p class="text-slate-500 text-[11px]">ডেলিভারি ধরন: <strong>{{ order.delivery_type }}</strong></p>
             </div>
         </div>

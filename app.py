@@ -403,13 +403,14 @@ def api_update_profile():
     address = data.get('address', '').strip()
     city = data.get('city', '').strip()
     district = data.get('district', '').strip()
+    division = data.get('division', '').strip()
 
     conn = get_db()
     c = conn.cursor()
     c.execute('''
-    UPDATE users SET name = ?, phone = ?, address = ?, city = ?, district = ?
+    UPDATE users SET name = ?, phone = ?, address = ?, city = ?, district = ?, division = ?
     WHERE id = ?
-    ''', (name, phone, address, city, district, g.user['id']))
+    ''', (name, phone, address, city, district, division, g.user['id']))
     conn.commit()
     conn.close()
 
@@ -575,6 +576,7 @@ def api_create_order():
         customer_email = (data.get('customer_email') or (g.user.get('email') if g.user else '') or '').strip()
         customer_phone = (data.get('customer_phone') or (g.user.get('phone') if g.user else '') or '').strip()
         shipping_address = (data.get('shipping_address') or '').strip()
+        shipping_division = (data.get('shipping_division') or '').strip()
         shipping_district = (data.get('shipping_district') or 'Dhaka').strip()
         shipping_thana = (data.get('shipping_thana') or '').strip()
         delivery_type = (data.get('delivery_type') or 'Standard').strip()
@@ -597,8 +599,8 @@ def api_create_order():
             price = float(item.get('price', 0))
             subtotal += (qty * price)
 
-        # Shipping fee calculation (Flat rate: Dhaka 60 BDT, Outside 120 BDT)
-        is_inside_dhaka = 'dhaka' in shipping_district.lower()
+        # Shipping fee calculation (Flat rate: Dhaka district 60 BDT, Outside Dhaka 120 BDT)
+        is_inside_dhaka = ('dhaka' in shipping_district.lower()) or ('ঢাকা' in shipping_district)
         shipping_fee = 60.0 if is_inside_dhaka else 120.0
 
         discount = 0.0
@@ -624,14 +626,14 @@ def api_create_order():
         c.execute('''
         INSERT INTO orders (
             order_number, user_id, customer_name, customer_email, customer_phone,
-            shipping_address, shipping_district, shipping_thana, delivery_type,
+            shipping_address, shipping_division, shipping_district, shipping_thana, delivery_type,
             payment_method, payment_status, transaction_id,
             subtotal, discount, shipping_fee, total_amount, coupon_code,
             order_status, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             order_number, user_id, customer_name, customer_email, customer_phone,
-            shipping_address, shipping_district, shipping_thana, delivery_type,
+            shipping_address, shipping_division, shipping_district, shipping_thana, delivery_type,
             payment_method, payment_status, transaction_id,
             subtotal, discount, shipping_fee, total_amount, coupon_code,
             order_status, notes

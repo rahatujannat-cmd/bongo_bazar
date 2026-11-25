@@ -65,7 +65,7 @@
         <div class="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 text-left text-xs space-y-1">
             <p class="font-bold text-emerald-900">ডেলিভারি ঠিকানা ও গ্রাহক:</p>
             <p class="text-slate-700"><strong>{{ order.customer_name }}</strong> (মোবাইল: {{ order.customer_phone }})</p>
-            <p class="text-slate-600">{{ order.shipping_address }}, {{ order.shipping_thana }}, {{ order.shipping_district }}</p>
+            <p class="text-slate-600">{{ order.shipping_address }}, {{ order.shipping_thana }}, {{ order.shipping_district }}{% if order.shipping_division %}, {{ order.shipping_division }}{% endif %}</p>
         </div>
 
         <!-- Action CTA Buttons -->
