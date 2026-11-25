@@ -13,12 +13,15 @@ from flask import (
     redirect, url_for, g, make_response
 )
 from database import (
-    get_db, hash_password, init_db, seed_db,
+    get_db, hash_password, verify_password, init_db, seed_db,
     get_all_settings, update_site_settings
 )
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'bongobazaar-super-secret-key-2026-bangladesh')
+secret_key = os.environ.get('SECRET_KEY')
+if not secret_key:
+    raise RuntimeError('SECRET_KEY environment variable is not set')
+app.secret_key = secret_key
 app.config['JSON_SORT_KEYS'] = False
 
 @app.context_processor
@@ -318,19 +321,19 @@ def api_login():
     if not identifier or not password:
         return jsonify({'success': False, 'message': 'ইমেইল/ফোন নম্বর ও পাসওয়ার্ড প্রদান করুন'}), 400
 
-    pw_hash = hash_password(password)
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''
-    SELECT id, name, email, phone, role, address, city, district
+    SELECT id, name, email, phone, role, address, city, district, password_hash
     FROM users
-    WHERE (email = ? OR phone = ?) AND password_hash = ? AND role = 'customer'
-    ''', (identifier.lower(), identifier, pw_hash))
+    WHERE (email = ? OR phone = ?) AND role = 'customer'
+    ''', (identifier.lower(), identifier))
     user = cursor.fetchone()
     conn.close()
 
-    if not user:
+    if not user or not verify_password(password, user['password_hash']):
         return jsonify({'success': False, 'message': 'ভুল ইমেইল/ফোন অথবা পাসওয়ার্ড'}), 401
+    user = {k: user[k] for k in user.keys() if k != 'password_hash'}
 
     session['user_id'] = user['id']
     session['role'] = 'customer'
@@ -363,19 +366,19 @@ def api_admin_login():
     if not identifier or not password:
         return jsonify({'success': False, 'message': 'ইউজারনেম/ইমেইল এবং পাসওয়ার্ড আবশ্যক'}), 400
 
-    pw_hash = hash_password(password)
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''
-    SELECT id, username, email, name, role, avatar_url
+    SELECT id, username, email, name, role, avatar_url, password_hash
     FROM admin_users
-    WHERE (LOWER(username) = ? OR LOWER(email) = ?) AND password_hash = ?
-    ''', (identifier.lower(), identifier.lower(), pw_hash))
+    WHERE (LOWER(username) = ? OR LOWER(email) = ?)
+    ''', (identifier.lower(), identifier.lower()))
     admin = cursor.fetchone()
 
-    if not admin:
+    if not admin or not verify_password(password, admin['password_hash']):
         conn.close()
         return jsonify({'success': False, 'message': 'ভুল অ্যাডমিন ইউজারনেম বা পাসওয়ার্ড'}), 401
+    admin = {k: admin[k] for k in admin.keys() if k != 'password_hash'}
 
     admin_data = dict(admin)
     cursor.execute('UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', (admin_data['id'],))

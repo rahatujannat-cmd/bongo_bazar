@@ -11,3 +11,7 @@ mingit/
 env/
 *.zip
 *.bat
+
+# Database files - never commit live customer data
+*.db
+*.sqlite3

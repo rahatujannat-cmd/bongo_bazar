@@ -4,13 +4,21 @@ Database setup, schema creation, and admin isolation for BongoBazaar E-Commerce 
 import sqlite3
 import os
 import json
-import hashlib
 from datetime import datetime, timedelta
+from werkzeug.security import check_password_hash, generate_password_hash
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'bongobazaar.db')
 
 def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+    # Salted, slow hash (Werkzeug / pbkdf2). Never store plain SHA256 hashes.
+    return generate_password_hash(password)
+
+
+def verify_password(password: str, password_hash: str) -> bool:
+    try:
+        return check_password_hash(password_hash, password)
+    except Exception:
+        return False
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -278,12 +286,16 @@ def seed_db():
     # 1. Seed Dedicated Admin (if not exists)
     cursor.execute('SELECT COUNT(*) as cnt FROM admin_users')
     if cursor.fetchone()['cnt'] == 0:
-        admin_pw = hash_password('Admin@12345')
-        cursor.execute('''
-        INSERT INTO admin_users (username, email, password_hash, name, role)
-        VALUES (?, ?, ?, ?, ?)
-        ''', ('admin', 'admin@bongobazaar.com', admin_pw, 'সুপার অ্যাডমিন (Admin)', 'superadmin'))
-        print("Dedicated Admin user created: username='admin', password='Admin@12345'")
+        admin_password = os.environ.get('ADMIN_PASSWORD')
+        if not admin_password:
+            print("No admin user created: set ADMIN_PASSWORD env var once to create the first admin.")
+        else:
+            admin_pw = hash_password(admin_password)
+            cursor.execute('''
+            INSERT INTO admin_users (username, email, password_hash, name, role)
+            VALUES (?, ?, ?, ?, ?)
+            ''', ('admin', 'admin@bongobazaar.com', admin_pw, 'সুপার অ্যাডমিন (Admin)', 'superadmin'))
+            print("Dedicated Admin user created: username='admin' (password from ADMIN_PASSWORD env var)")
 
     # Ensure no admin exists in customer users table
     cursor.execute("DELETE FROM users WHERE role = 'admin'")
