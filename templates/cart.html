@@ -65,12 +65,12 @@
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">ডেলিভারি এলাকা নির্বাচন করুন:</label>
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <label class="flex items-center gap-2 p-2 border rounded-xl cursor-pointer hover:bg-slate-50">
-                            <input type="radio" name="shipping_loc" value="dhaka" checked onchange="updateShipping(60)" class="text-emerald-600">
-                            <span>ঢাকার ভেতরে (৳৬০)</span>
+                            <input type="radio" name="shipping_loc" value="dhaka" checked onchange="updateShipping({{ site_settings.shipping_fee_dhaka if site_settings else 60 }})" class="text-emerald-600">
+                            <span>ঢাকার ভেতরে (৳{{ site_settings.shipping_fee_dhaka if site_settings else 60 }})</span>
                         </label>
                         <label class="flex items-center gap-2 p-2 border rounded-xl cursor-pointer hover:bg-slate-50">
-                            <input type="radio" name="shipping_loc" value="outside" onchange="updateShipping(120)" class="text-emerald-600">
-                            <span>ঢাকার বাইরে (৳১২০)</span>
+                            <input type="radio" name="shipping_loc" value="outside" onchange="updateShipping({{ site_settings.shipping_fee_outside if site_settings else 120 }})" class="text-emerald-600">
+                            <span>ঢাকার বাইরে (৳{{ site_settings.shipping_fee_outside if site_settings else 120 }})</span>
                         </label>
                     </div>
                 </div>
@@ -118,7 +118,7 @@
 
 {% block scripts %}
 <script>
-    let shippingFee = 60;
+    let shippingFee = {{ site_settings.shipping_fee_dhaka if site_settings else 60 }};
     let couponDiscount = 0;
     let appliedCoupon = null;
 

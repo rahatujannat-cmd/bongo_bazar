@@ -175,7 +175,11 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/bangladesh_geo.js') }}"></script>
 <script>
-    let checkoutShippingBase = 60;
+    const SETTING_FEE_DHAKA = {{ (site_settings.shipping_fee_dhaka or 60) | float }};
+    const SETTING_FEE_OUTSIDE = {{ (site_settings.shipping_fee_outside or 120) | float }};
+    const SETTING_FREE_THRESHOLD = {{ (site_settings.free_shipping_threshold or 0) | float }};
+
+    let checkoutShippingBase = SETTING_FEE_DHAKA;
     let currentDivisionKey = '';
     let currentDistrictKey = '';
 
@@ -221,7 +225,7 @@
             distSelect.disabled = true;
             thanaSelect.innerHTML = '<option value="">আগে জেলা নির্বাচন করুন</option>';
             thanaSelect.disabled = true;
-            checkoutShippingBase = 120;
+            checkoutShippingBase = SETTING_FEE_OUTSIDE;
             updateCheckoutTotals();
             return;
         }
@@ -246,7 +250,7 @@
         } else {
             thanaSelect.innerHTML = '<option value="">আগে জেলা নির্বাচন করুন</option>';
             thanaSelect.disabled = true;
-            checkoutShippingBase = 120;
+            checkoutShippingBase = SETTING_FEE_OUTSIDE;
             updateCheckoutTotals();
         }
     }
@@ -258,7 +262,7 @@
         if (!districtKey) {
             thanaSelect.innerHTML = '<option value="">আগে জেলা নির্বাচন করুন</option>';
             thanaSelect.disabled = true;
-            checkoutShippingBase = 120;
+            checkoutShippingBase = SETTING_FEE_OUTSIDE;
             updateCheckoutTotals();
             return;
         }
@@ -274,8 +278,8 @@
             thanaSelect.appendChild(opt);
         });
 
-        // Dhaka district: 60 BDT delivery fee, other districts: 120 BDT
-        checkoutShippingBase = (districtKey === 'Dhaka') ? 60 : 120;
+        // Dynamic delivery fee based on store settings
+        checkoutShippingBase = (districtKey === 'Dhaka') ? SETTING_FEE_DHAKA : SETTING_FEE_OUTSIDE;
         updateCheckoutTotals();
     }
 
@@ -299,7 +303,10 @@
 
     function updateCheckoutTotals() {
         const subtotal = Cart.getSubtotal();
-        const shipping = checkoutShippingBase;
+        let shipping = checkoutShippingBase;
+        if (SETTING_FREE_THRESHOLD > 0 && subtotal >= SETTING_FREE_THRESHOLD) {
+            shipping = 0;
+        }
         const total = subtotal + shipping;
 
         document.getElementById('checkout-subtotal').textContent = `৳${subtotal.toLocaleString('en-IN')}`;

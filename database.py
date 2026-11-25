@@ -211,8 +211,65 @@ def init_db():
     )
     ''')
 
+    # 11. Site Settings Table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS site_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+
     conn.commit()
     conn.close()
+
+DEFAULT_SETTINGS = {
+    'shop_name': 'BongoBazaar',
+    'shop_name_bn': 'বঙ্গবাজার',
+    'shop_tagline': 'সেরা মানের দেশি ও প্রয়োজনীয় পণ্য, এখন এক ক্লিকেই!',
+    'shop_description': 'সারা দেশে দ্রুততম ক্যাশ অন ডেলিভারি এবং সহজ কেনাকাটার নির্ভরযোগ্য প্ল্যাটফর্ম।',
+    'contact_phone': '01700-000000',
+    'contact_email': 'support@bongobazaar.com',
+    'contact_address': 'বাড়ি ১২, রোড ৪, ধানমন্ডি, ঢাকা-১২০৫',
+    'whatsapp_number': '01700000000',
+    'business_hours': 'সকাল ৯:০০ - রাত ১০:০০ (প্রতিদিন)',
+    'shipping_fee_dhaka': '60',
+    'shipping_fee_outside': '120',
+    'free_shipping_threshold': '0',
+    'facebook_url': 'https://facebook.com',
+    'instagram_url': 'https://instagram.com',
+    'youtube_url': 'https://youtube.com',
+    'announcement_enabled': '0',
+    'announcement_text': 'আমাদের সকল অর্গানিক ও নিত্যপ্রয়োজনীয় পণ্যে ক্যাশ অন ডেলিভারি সুবিধা উপভোগ করুন!',
+    'currency_symbol': '৳',
+    'delivery_time_inside': '২৪ থেকে ৪৮ ঘণ্টা',
+    'delivery_time_outside': '২ থেকে ৩ কার্যদিবস'
+}
+
+def get_all_settings():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT key, value FROM site_settings')
+    rows = cursor.fetchall()
+    conn.close()
+
+    settings = dict(DEFAULT_SETTINGS)
+    for r in rows:
+        settings[r['key']] = r['value']
+    return settings
+
+def update_site_settings(new_settings: dict):
+    conn = get_db()
+    cursor = conn.cursor()
+    for key, value in new_settings.items():
+        cursor.execute('''
+        INSERT INTO site_settings (key, value, updated_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+        ''', (key, str(value)))
+    conn.commit()
+    conn.close()
+    return get_all_settings()
 
 def seed_db():
     conn = get_db()
@@ -250,6 +307,14 @@ def seed_db():
 
     # Clean any demo coupons
     cursor.execute('DELETE FROM coupons')
+
+    # 3. Seed Default Site Settings (if missing)
+    for k, v in DEFAULT_SETTINGS.items():
+        cursor.execute('''
+        INSERT INTO site_settings (key, value)
+        VALUES (?, ?)
+        ON CONFLICT(key) DO NOTHING
+        ''', (k, v))
 
     conn.commit()
     conn.close()

@@ -25,9 +25,11 @@
                     <i data-lucide="phone-call" class="w-5 h-5"></i>
                 </div>
                 <h4 class="font-bold text-slate-900 text-sm">হটলাইন ও কাস্টমার কেয়ার</h4>
-                <p class="text-xs text-slate-500">সকাল ৯টা থেকে রাত ১০টা পর্যন্ত (প্রতিদিন)</p>
-                <p class="text-sm font-black text-emerald-700 font-mono">+880 9612-000000</p>
-                <p class="text-xs font-bold text-slate-700 font-mono">01700-000000 (WhatsApp)</p>
+                <p class="text-xs text-slate-500">{{ site_settings.business_hours if site_settings else 'সকাল ৯টা থেকে রাত ১০টা পর্যন্ত' }}</p>
+                <p class="text-sm font-black text-emerald-700 font-mono">{{ site_settings.contact_phone if site_settings else '০১৭০০-০০০০০০' }}</p>
+                {% if site_settings and site_settings.whatsapp_number %}
+                <p class="text-xs font-bold text-slate-700 font-mono">{{ site_settings.whatsapp_number }} (WhatsApp)</p>
+                {% endif %}
             </div>
 
             <div class="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2">
@@ -36,19 +38,17 @@
                 </div>
                 <h4 class="font-bold text-slate-900 text-sm">ইমেইল সাপোর্ট</h4>
                 <p class="text-xs text-slate-500">যেকোনো মতামত বা অফিশিয়াল যোগাযোগে ইমেইল করুন</p>
-                <p class="text-xs font-bold text-sky-700">support@bongobazaar.com</p>
-                <p class="text-xs font-bold text-sky-700">billing@bongobazaar.com</p>
+                <p class="text-xs font-bold text-sky-700 font-mono">{{ site_settings.contact_email if site_settings else 'support@bongobazaar.com' }}</p>
             </div>
 
             <div class="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2">
                 <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
                     <i data-lucide="map-pin" class="w-5 h-5"></i>
                 </div>
-                <h4 class="font-bold text-slate-900 text-sm">প্রধান কার্যালয়</h4>
+                <h4 class="font-bold text-slate-900 text-sm">প্রধান কার্যালয় / শপ ঠিকানা</h4>
                 <p class="text-xs text-slate-600 leading-relaxed">
-                    হাউজ ১২, রোড ৫, ব্লক সি, গুলশান-১, ঢাকা-১২১২, বাংলাদেশ।
+                    {{ site_settings.contact_address if site_settings else 'ঢাকা, বাংলাদেশ' }}
                 </p>
-                <span class="inline-block px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold">ওয়্যারহাউজ: তেজগাঁও শিল্পাঞ্চল, ঢাকা</span>
             </div>
 
         </div>

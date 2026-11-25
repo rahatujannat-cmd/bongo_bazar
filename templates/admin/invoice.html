@@ -33,12 +33,12 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
             <div>
                 <div class="flex items-center gap-2 mb-1">
-                    <span class="text-2xl font-black text-slate-900">Bongo<span class="text-emerald-600">Bazaar</span></span>
+                    <span class="text-2xl font-black text-slate-900">{{ site_settings.shop_name if site_settings else 'BongoBazaar' }}</span>
                     <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">অফিসিয়াল চালান</span>
                 </div>
-                <p class="text-xs text-slate-500">বঙ্গবাজার অনলাইন লিমিটেড</p>
-                <p class="text-xs text-slate-500">হাউজ ১২, রোড ৫, গুলশান-১, ঢাকা-১২১২</p>
-                <p class="text-[11px] text-slate-400 mt-1">ট্রেড লাইসেন্স: TRAD/DNCC/019284 &bull; ভ্যাট রেজি: 00293182-0101</p>
+                <p class="text-xs text-slate-500">{{ site_settings.shop_name_bn if site_settings else 'বঙ্গবাজার' }}</p>
+                <p class="text-xs text-slate-500">{{ site_settings.contact_address if site_settings else 'ঢাকা, বাংলাদেশ' }}</p>
+                <p class="text-[11px] text-slate-400 mt-1">হটলাইন: {{ site_settings.contact_phone if site_settings else '০১৭০০-০০০০০০' }} &bull; ইমেইল: {{ site_settings.contact_email if site_settings else 'support@bongobazaar.com' }}</p>
             </div>
 
             <div class="text-right sm:text-right">

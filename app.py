@@ -12,11 +12,18 @@ from flask import (
     Flask, render_template, request, jsonify, session,
     redirect, url_for, g, make_response
 )
-from database import get_db, hash_password, init_db, seed_db
+from database import (
+    get_db, hash_password, init_db, seed_db,
+    get_all_settings, update_site_settings
+)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'bongobazaar-super-secret-key-2026-bangladesh')
 app.config['JSON_SORT_KEYS'] = False
+
+@app.context_processor
+def inject_site_settings():
+    return dict(site_settings=get_all_settings())
 
 # Ensure DB initialized
 init_db()
@@ -231,6 +238,12 @@ def admin_orders_page():
 def admin_customers_page():
     return render_template('admin/customers.html')
 
+@app.route('/admin/settings')
+@admin_required
+def admin_settings_page():
+    settings = get_all_settings()
+    return render_template('admin/settings.html', settings=settings)
+
 @app.route('/admin/coupons')
 @admin_required
 def admin_coupons_page():
@@ -391,6 +404,23 @@ def api_admin_me():
     if not g.admin:
         return jsonify({'authenticated': False, 'admin': None})
     return jsonify({'authenticated': True, 'admin': g.admin})
+
+# --- Dedicated Site Settings Management APIs ---
+@app.route('/api/admin/settings', methods=['GET'])
+@admin_required
+def api_admin_get_settings():
+    return jsonify({'success': True, 'settings': get_all_settings()})
+
+@app.route('/api/admin/settings', methods=['POST'])
+@admin_required
+def api_admin_update_settings():
+    data = request.get_json() or {}
+    updated = update_site_settings(data)
+    return jsonify({
+        'success': True,
+        'message': 'সাইট সেটিংস সফলভাবে আপডেট ও সংরক্ষণ করা হয়েছে!',
+        'settings': updated
+    })
 
 @app.route('/api/auth/profile', methods=['PUT'])
 def api_update_profile():
@@ -599,9 +629,17 @@ def api_create_order():
             price = float(item.get('price', 0))
             subtotal += (qty * price)
 
-        # Shipping fee calculation (Flat rate: Dhaka district 60 BDT, Outside Dhaka 120 BDT)
+        # Dynamic Shipping fee calculation from Site Settings
+        cur_settings = get_all_settings()
+        fee_dhaka = float(cur_settings.get('shipping_fee_dhaka', 60))
+        fee_outside = float(cur_settings.get('shipping_fee_outside', 120))
+        free_thresh = float(cur_settings.get('free_shipping_threshold', 0))
+
         is_inside_dhaka = ('dhaka' in shipping_district.lower()) or ('ঢাকা' in shipping_district)
-        shipping_fee = 60.0 if is_inside_dhaka else 120.0
+        shipping_fee = fee_dhaka if is_inside_dhaka else fee_outside
+
+        if free_thresh > 0 and subtotal >= free_thresh:
+            shipping_fee = 0.0
 
         discount = 0.0
         coupon_code = ''

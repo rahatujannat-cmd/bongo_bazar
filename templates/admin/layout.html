@@ -53,6 +53,11 @@
                     <i data-lucide="users" class="w-4 h-4"></i>
                     <span>কাস্টমার লিস্ট</span>
                 </a>
+
+                <a href="/admin/settings" class="flex items-center gap-3 px-4 py-3 rounded-xl {% if request.path == '/admin/settings' %}bg-purple-600 text-white shadow-md{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %} transition-all">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span>সাইট সেটিংস (Settings)</span>
+                </a>
             </nav>
         </div>
 
