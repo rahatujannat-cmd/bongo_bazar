@@ -75,6 +75,23 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def superadmin_required(f):
+    """Only a superadmin may use this route. Editors (role='editor') are
+    blocked: they can manage products/orders but not settings, coupons or
+    customers. Superadmin flow is unchanged (role='superadmin')."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not g.admin:
+            if request.path.startswith('/api/admin'):
+                return jsonify({'success': False, 'message': 'অননুমোদিত প্রবেশ! অ্যাডমিন অথেনটিকেশন আবশ্যক'}), 401
+            return redirect(url_for('admin_login_page', next=request.url))
+        if (g.admin.get('role') or 'superadmin') != 'superadmin':
+            if request.path.startswith('/api/admin'):
+                return jsonify({'success': False, 'message': 'এই পেজটি শুধুমাত্র সুপার অ্যাডমিনের জন্য'}), 403
+            return redirect(url_for('admin_dashboard_page'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # ==========================================
 # PAGE ROUTES
 # ==========================================
@@ -237,18 +254,18 @@ def admin_orders_page():
     return render_template('admin/orders.html')
 
 @app.route('/admin/customers')
-@admin_required
+@superadmin_required
 def admin_customers_page():
     return render_template('admin/customers.html')
 
 @app.route('/admin/settings')
-@admin_required
+@superadmin_required
 def admin_settings_page():
     settings = get_all_settings()
     return render_template('admin/settings.html', settings=settings)
 
 @app.route('/admin/coupons')
-@admin_required
+@superadmin_required
 def admin_coupons_page():
     return render_template('admin/coupons.html')
 
@@ -410,12 +427,12 @@ def api_admin_me():
 
 # --- Dedicated Site Settings Management APIs ---
 @app.route('/api/admin/settings', methods=['GET'])
-@admin_required
+@superadmin_required
 def api_admin_get_settings():
     return jsonify({'success': True, 'settings': get_all_settings()})
 
 @app.route('/api/admin/settings', methods=['POST'])
-@admin_required
+@superadmin_required
 def api_admin_update_settings():
     data = request.get_json() or {}
     updated = update_site_settings(data)
@@ -568,6 +585,14 @@ def api_validate_coupon():
 
     coupon = dict(coupon)
 
+    # Check expiry (expiry_date is stored as YYYY-MM-DD text)
+    if coupon.get('expiry_date') and coupon['expiry_date'] < datetime.now().date().isoformat():
+        return jsonify({'success': False, 'message': 'কুপনের মেয়াদ শেষ হয়ে গেছে'}), 400
+
+    # Check usage limit
+    if coupon.get('usage_limit') is not None and coupon.get('used_count', 0) >= coupon['usage_limit']:
+        return jsonify({'success': False, 'message': 'এই কুপনের ব্যবহারের সীমা শেষ হয়ে গেছে'}), 400
+
     # Check minimum spend
     if subtotal < coupon['min_spend']:
         return jsonify({
@@ -595,6 +620,10 @@ def api_validate_coupon():
 # --- Orders & Checkout APIs ---
 @app.route('/api/orders/create', methods=['POST'])
 def api_create_order():
+    # Prices, stock and coupons are ALWAYS verified server-side
+    # against the database - client-sent prices are ignored, so a
+    # tampered request cannot buy items for 1 taka. Payment is
+    # Cash on Delivery only (see static/js/payment.js note).
     if not g.user:
         return jsonify({
             'success': False,
@@ -603,6 +632,7 @@ def api_create_order():
             'redirect': '/login?next=/checkout'
         }), 401
 
+    conn = None
     try:
         data = request.get_json() or {}
         customer_name = (data.get('customer_name') or (g.user.get('name') if g.user else '') or '').strip()
@@ -613,8 +643,6 @@ def api_create_order():
         shipping_district = (data.get('shipping_district') or 'Dhaka').strip()
         shipping_thana = (data.get('shipping_thana') or '').strip()
         delivery_type = (data.get('delivery_type') or 'Standard').strip()
-        payment_method = (data.get('payment_method') or 'Cash on Delivery (ক্যাশ অন ডেলিভারি)').strip()
-        transaction_id = (data.get('transaction_id') or 'COD').strip()
         notes = (data.get('notes') or '').strip()
         coupon_code = (data.get('coupon_code') or '').strip().upper()
         items = data.get('items', [])
@@ -625,45 +653,106 @@ def api_create_order():
         if not items or len(items) == 0:
             return jsonify({'success': False, 'message': 'আপনার কার্ট ফাঁকা'}), 400
 
-        # Calculate totals
-        subtotal = 0.0
-        for item in items:
-            qty = int(item.get('quantity', 1))
-            price = float(item.get('price', 0))
-            subtotal += (qty * price)
-
-        # Dynamic Shipping fee calculation from Site Settings
-        cur_settings = get_all_settings()
-        fee_dhaka = float(cur_settings.get('shipping_fee_dhaka', 60))
-        fee_outside = float(cur_settings.get('shipping_fee_outside', 120))
-        free_thresh = float(cur_settings.get('free_shipping_threshold', 0))
-
-        is_inside_dhaka = ('dhaka' in shipping_district.lower()) or ('ঢাকা' in shipping_district)
-        shipping_fee = fee_dhaka if is_inside_dhaka else fee_outside
-
-        if free_thresh > 0 and subtotal >= free_thresh:
-            shipping_fee = 0.0
-
-        discount = 0.0
-        coupon_code = ''
-        total_amount = subtotal + shipping_fee
-
-        # Generate Order Number: BB-YYYYMMDD-XXXX
-        rand_suffix = random.randint(1000, 9999)
-        date_str = datetime.now().strftime('%Y%m%d')
-        order_number = f"BB-{date_str}-{rand_suffix}"
-
-        # Standard Cash on Delivery
-        payment_method = data.get('payment_method') or 'Cash on Delivery (ক্যাশ অন ডেলিভারি)'
+        # Payment is Cash on Delivery only - ignore any client-sent
+        # payment_method / transaction_id (fake bKash/Nagad/card
+        # simulation was removed; a real gateway is a separate step).
+        payment_method = 'Cash on Delivery (ক্যাশ অন ডেলিভারি)'
+        transaction_id = 'COD'
         payment_status = 'Pending'
         order_status = 'Pending'
-
-        user_id = g.user['id']
 
         conn = get_db()
         c = conn.cursor()
 
-        # Insert into Orders table
+        # --- Verify every item against the database (price + stock) ---
+        verified_items = []
+        subtotal = 0.0
+        for item in items:
+            prod_id = item.get('id')
+            try:
+                qty = int(item.get('quantity', 1))
+            except (TypeError, ValueError):
+                qty = 0
+            if not prod_id or qty < 1:
+                conn.close()
+                return jsonify({'success': False, 'message': 'অর্ডারের পণ্যের পরিমাণ সঠিক নয়'}), 400
+            c.execute('SELECT id, title, price, sale_price, stock, image FROM products WHERE id = ?', (prod_id,))
+            row = c.fetchone()
+            if not row:
+                conn.close()
+                return jsonify({'success': False, 'message': 'একটি পণ্য পাওয়া যায়নি'}), 400
+            product = dict(row)
+            # Effective price: sale_price when set, otherwise price
+            price = float(product['sale_price']) if product.get('sale_price') else float(product['price'])
+            if int(product['stock']) < qty:
+                conn.close()
+                return jsonify({'success': False, 'message': f"'{product['title']}'-এর পর্যাপ্ত স্টক নেই (আছে {product['stock']}টি)"}), 400
+            verified_items.append({
+                'id': product['id'],
+                'title': product['title'],
+                'price': price,
+                'quantity': qty,
+                'color': item.get('color', ''),
+                'size': item.get('size', ''),
+                'image': product.get('image') or item.get('image', ''),
+            })
+            subtotal += price * qty
+
+        # --- Coupon: verify against the database and apply for real ---
+        discount = 0.0
+        applied_coupon = None
+        if coupon_code:
+            c.execute('SELECT * FROM coupons WHERE code = ? AND is_active = 1', (coupon_code,))
+            coupon_row = c.fetchone()
+            if not coupon_row:
+                conn.close()
+                return jsonify({'success': False, 'message': 'অবৈধ কুপন কোড'}), 400
+            coupon = dict(coupon_row)
+            if coupon.get('expiry_date') and coupon['expiry_date'] < datetime.now().date().isoformat():
+                conn.close()
+                return jsonify({'success': False, 'message': 'কুপনের মেয়াদ শেষ হয়ে গেছে'}), 400
+            if coupon.get('usage_limit') is not None and coupon.get('used_count', 0) >= coupon['usage_limit']:
+                conn.close()
+                return jsonify({'success': False, 'message': 'এই কুপনের ব্যবহারের সীমা শেষ হয়ে গেছে'}), 400
+            if subtotal < float(coupon.get('min_spend') or 0):
+                conn.close()
+                return jsonify({'success': False, 'message': f"এই কুপন ব্যবহারের জন্য সর্বনিম্ন অর্ডার পরিমাণ ৳{int(coupon.get('min_spend') or 0)}"}), 400
+            if coupon['discount_type'] == 'percentage':
+                discount = (subtotal * float(coupon['discount_value'])) / 100.0
+                if coupon.get('max_discount'):
+                    discount = min(discount, float(coupon['max_discount']))
+            else:
+                discount = min(float(coupon['discount_value']), subtotal)
+            discount = round(discount, 2)
+            applied_coupon = coupon
+
+        # --- Shipping fee from site settings (unchanged) ---
+        cur_settings = get_all_settings()
+        fee_dhaka = float(cur_settings.get('shipping_fee_dhaka', 60))
+        fee_outside = float(cur_settings.get('shipping_fee_outside', 120))
+        free_thresh = float(cur_settings.get('free_shipping_threshold', 0))
+        is_inside_dhaka = ('dhaka' in shipping_district.lower()) or ('ঢাকা' in shipping_district)
+        shipping_fee = fee_dhaka if is_inside_dhaka else fee_outside
+        if free_thresh > 0 and subtotal >= free_thresh:
+            shipping_fee = 0.0
+
+        total_amount = round(subtotal - discount + shipping_fee, 2)
+        if total_amount < 0:
+            total_amount = 0.0
+
+        # Generate a unique order number: BB-YYYYMMDD-XXXX
+        date_str = datetime.now().strftime('%Y%m%d')
+        for _ in range(10):
+            order_number = f"BB-{date_str}-{random.randint(1000, 9999)}"
+            c.execute('SELECT id FROM orders WHERE order_number = ?', (order_number,))
+            if not c.fetchone():
+                break
+        else:
+            conn.close()
+            return jsonify({'success': False, 'message': 'অর্ডার নম্বর তৈরি করা যায়নি, আবার চেষ্টা করুন'}), 500
+
+        user_id = g.user['id']
+
         c.execute('''
         INSERT INTO orders (
             order_number, user_id, customer_name, customer_email, customer_phone,
@@ -676,28 +765,25 @@ def api_create_order():
             order_number, user_id, customer_name, customer_email, customer_phone,
             shipping_address, shipping_division, shipping_district, shipping_thana, delivery_type,
             payment_method, payment_status, transaction_id,
-            subtotal, discount, shipping_fee, total_amount, coupon_code,
+            subtotal, discount, shipping_fee, total_amount, coupon_code if applied_coupon else '',
             order_status, notes
         ))
         order_id = c.lastrowid
 
-        # Insert order items & reduce stock
-        for item in items:
-            prod_id = item.get('id')
-            qty = int(item.get('quantity', 1))
-            price = float(item.get('price', 0))
-            item_total = price * qty
+        for item in verified_items:
+            item_total = round(item['price'] * item['quantity'], 2)
             c.execute('''
             INSERT INTO order_items (order_id, product_id, product_title, price, quantity, color, size, image, total)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
-                order_id, prod_id, item.get('title', ''), price, qty,
-                item.get('color', ''), item.get('size', ''), item.get('image', ''), item_total
+                order_id, item['id'], item['title'], item['price'], item['quantity'],
+                item['color'], item['size'], item['image'], item_total
             ))
+            # Stock was already verified above, so this cannot go negative
+            c.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (item['quantity'], item['id']))
 
-            # Decrease product stock
-            if prod_id:
-                c.execute('UPDATE products SET stock = MAX(0, stock - ?) WHERE id = ?', (qty, prod_id))
+        if applied_coupon:
+            c.execute('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?', (applied_coupon['id'],))
 
         conn.commit()
         conn.close()
@@ -707,9 +793,18 @@ def api_create_order():
             'message': 'আপনার অর্ডারটি সফলভাবে সম্পন্ন হয়েছে!',
             'order_number': order_number,
             'order_id': order_id,
+            'subtotal': round(subtotal, 2),
+            'discount': discount,
+            'shipping_fee': shipping_fee,
             'total_amount': total_amount
         })
     except Exception as e:
+        if conn is not None:
+            try:
+                conn.rollback()
+                conn.close()
+            except Exception:
+                pass
         return jsonify({'success': False, 'message': f'অর্ডার প্রক্রিয়াকরণে ত্রুটি: {str(e)}'}), 500
 
 @app.route('/api/orders/track/<order_number>')
@@ -1100,7 +1195,7 @@ def api_admin_update_order_status(order_id):
     return jsonify({'success': True, 'message': f'অর্ডার স্ট্যাটাস সফলভাবে {new_status} করা হয়েছে'})
 
 @app.route('/api/admin/customers')
-@admin_required
+@superadmin_required
 def api_admin_customers():
     conn = get_db()
     c = conn.cursor()
@@ -1119,7 +1214,7 @@ def api_admin_customers():
     return jsonify({'success': True, 'customers': customers})
 
 @app.route('/api/admin/coupons', methods=['GET', 'POST'])
-@admin_required
+@superadmin_required
 def api_admin_coupons():
     conn = get_db()
     c = conn.cursor()
@@ -1151,7 +1246,7 @@ def api_admin_coupons():
     return jsonify({'success': True, 'coupons': coupons})
 
 @app.route('/api/admin/coupons/<int:coupon_id>', methods=['DELETE'])
-@admin_required
+@superadmin_required
 def api_admin_delete_coupon(coupon_id):
     conn = get_db()
     c = conn.cursor()
