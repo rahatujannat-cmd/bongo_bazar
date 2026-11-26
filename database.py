@@ -3,15 +3,136 @@ Database setup, schema creation, and admin isolation for BongoBazaar E-Commerce 
 """
 import sqlite3
 import os
-import json
+import re
 from datetime import datetime, timedelta
 from werkzeug.security import check_password_hash, generate_password_hash
 
-# Database location. On Render the file lives on the persistent disk:
-# set DATABASE_PATH=/var/data/bongobazaar.db in the Render env vars
-# (see render.yaml). Locally it defaults to bongobazaar.db next to
-# this file. Never commit the live database file to git.
+# ------------------------------------------------------------------
+# Database backend: Postgres when DATABASE_URL is set, else SQLite.
+# ------------------------------------------------------------------
+# On Render, set DATABASE_URL to a free Postgres connection string
+# (Neon or Supabase, e.g. postgresql://user:pass@host/db?sslmode=require)
+# in the dashboard Environment tab. Never put the URL in code or git.
+# Locally, with no DATABASE_URL, the app keeps using the SQLite file
+# (DATABASE_PATH env var, else bongobazaar.db next to this file).
+# The old Render persistent-disk setup does not work on the Free plan,
+# so SQLite on Render is ephemeral - use Postgres for live data.
+DATABASE_URL = os.environ.get('DATABASE_URL') or ''
+USE_POSTGRES = bool(DATABASE_URL)
 DB_PATH = os.environ.get('DATABASE_PATH') or os.path.join(os.path.dirname(__file__), 'bongobazaar.db')
+
+# IntegrityError raised for duplicate keys (SKU, email, coupon code...).
+# psycopg3 raises psycopg.errors.IntegrityError; SQLite raises
+# sqlite3.IntegrityError. app.py catches DBIntegrityError for both.
+try:
+    from psycopg.errors import IntegrityError as _PgIntegrityError
+except Exception:  # psycopg not installed (local SQLite dev)
+    _PgIntegrityError = None
+# A tuple, so `except DBIntegrityError` catches duplicate-key errors
+# from BOTH backends: psycopg raises its own IntegrityError, SQLite
+# raises sqlite3.IntegrityError. (A single class cannot cover both,
+# because the two exception hierarchies are unrelated.)
+DBIntegrityError = tuple(
+    cls for cls in (_PgIntegrityError, sqlite3.IntegrityError) if cls is not None
+)
+
+
+class _DictRow(dict):
+    """A dict row, so Postgres rows behave like sqlite3.Row:
+    row['col'], dict(row) and row.keys() all work."""
+
+
+class _Cursor:
+    """Wraps a DB-API cursor so the rest of the app can keep writing
+    SQLite-style SQL with `?` placeholders and `cursor.lastrowid`.
+
+    Postgres differences handled here, in one place:
+    - `?` placeholders are translated to `%s`.
+    - `INTEGER PRIMARY KEY AUTOINCREMENT` in CREATE TABLE is
+      translated to `BIGSERIAL PRIMARY KEY`.
+    - INSERTs get `RETURNING id` appended (except site_settings,
+      whose key is text, not an id) so `cursor.lastrowid` works;
+      the returned id is consumed immediately.
+    - Rows are returned as _DictRow (column name -> value).
+    """
+
+    def __init__(self, real_cursor, postgres):
+        self._cur = real_cursor
+        self._postgres = postgres
+        self._lastrowid = None
+
+    @property
+    def lastrowid(self):
+        if self._postgres:
+            return self._lastrowid
+        return self._cur.lastrowid
+
+    def _translate(self, sql):
+        if not self._postgres:
+            return sql
+        sql = sql.replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'BIGSERIAL PRIMARY KEY')
+        return sql.replace('?', '%s')
+
+    def execute(self, sql, params=None):
+        sql = self._translate(sql)
+        returning_id = False
+        if self._postgres:
+            stripped = sql.strip().upper()
+            if stripped.startswith('INSERT INTO'):
+                m = re.match(r'INSERT\s+INTO\s+(\w+)', stripped)
+                table = m.group(1).lower() if m else ''
+                if table and table != 'site_settings' and 'RETURNING' not in stripped:
+                    sql = sql.rstrip().rstrip(';') + ' RETURNING id'
+                    returning_id = True
+        if params is None:
+            self._cur.execute(sql)
+        else:
+            self._cur.execute(sql, params)
+        if returning_id:
+            row = self._cur.fetchone()
+            self._lastrowid = row[0] if row else None
+        return self
+
+    def _as_dicts(self, rows):
+        if not self._postgres:
+            return rows
+        cols = [d[0] for d in (self._cur.description or [])]
+        return [_DictRow(zip(cols, r)) for r in rows]
+
+    def fetchone(self):
+        row = self._cur.fetchone()
+        if row is None:
+            return None
+        if self._postgres:
+            cols = [d[0] for d in (self._cur.description or [])]
+            return _DictRow(zip(cols, row))
+        return row
+
+    def fetchall(self):
+        return self._as_dicts(self._cur.fetchall())
+
+    def close(self):
+        return self._cur.close()
+
+
+class _Connection:
+    """Wraps a DB-API connection; cursor() returns a _Cursor."""
+
+    def __init__(self, real_conn, postgres):
+        self._conn = real_conn
+        self._postgres = postgres
+
+    def cursor(self):
+        return _Cursor(self._conn.cursor(), self._postgres)
+
+    def commit(self):
+        return self._conn.commit()
+
+    def rollback(self):
+        return self._conn.rollback()
+
+    def close(self):
+        return self._conn.close()
 
 def hash_password(password: str) -> str:
     # Salted, slow hash (Werkzeug / pbkdf2). Never store plain SHA256 hashes.
@@ -25,14 +146,48 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 def get_db():
-    # Make sure the database directory exists (e.g. the Render disk
-    # mount /var/data) so the first connect does not fail.
+    """Open a database connection.
+
+    Postgres (DATABASE_URL set): one psycopg connection per call,
+    matching the existing pattern of opening a connection per request.
+    Use the provider's pooled connection string (Neon `-pooler` host)
+    to stay within the free tier's connection limit.
+    SQLite (no DATABASE_URL): the local file, as before.
+    """
+    if USE_POSTGRES:
+        import psycopg
+        conn = psycopg.connect(DATABASE_URL)
+        return _Connection(conn, postgres=True)
+    # Make sure the database directory exists so the first connect
+    # does not fail.
     db_dir = os.path.dirname(DB_PATH)
     if db_dir:
         os.makedirs(db_dir, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    return conn
+    return _Connection(conn, postgres=False)
+
+
+def _ensure_column(conn, table, column, coltype):
+    """Add a column if it is missing (safe schema migration).
+
+    On Postgres a failed ALTER aborts the whole transaction, so the
+    column is checked in information_schema first instead of relying
+    on try/except. On SQLite the try/except path is kept.
+    """
+    cursor = conn.cursor()
+    if USE_POSTGRES:
+        cursor.execute(
+            'SELECT 1 FROM information_schema.columns '
+            'WHERE table_name = ? AND column_name = ?',
+            (table, column))
+        if not cursor.fetchone():
+            cursor.execute(f'ALTER TABLE {table} ADD COLUMN {column} {coltype}')
+    else:
+        try:
+            cursor.execute(f'ALTER TABLE {table} ADD COLUMN {column} {coltype}')
+        except Exception:
+            pass
 
 def init_db():
     conn = get_db()
@@ -141,15 +296,10 @@ def init_db():
     )
     ''')
 
-    # Safe Schema Migrations
-    try:
-        cursor.execute("ALTER TABLE orders ADD COLUMN shipping_division TEXT")
-    except Exception:
-        pass
-    try:
-        cursor.execute("ALTER TABLE users ADD COLUMN division TEXT")
-    except Exception:
-        pass
+    # Safe Schema Migrations (column added only if missing;
+    # see _ensure_column - a failed ALTER aborts a Postgres txn)
+    _ensure_column(conn, 'orders', 'shipping_division', 'TEXT')
+    _ensure_column(conn, 'users', 'division', 'TEXT')
 
     # 6. Order Items Table
     cursor.execute('''

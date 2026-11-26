@@ -4,7 +4,6 @@ Flask Backend with RESTful APIs, Session Management, SQLite Database, and Templa
 """
 import os
 import json
-import sqlite3
 import random
 from datetime import datetime, timedelta
 from functools import wraps
@@ -14,7 +13,7 @@ from flask import (
 )
 from database import (
     get_db, hash_password, verify_password, init_db, seed_db,
-    get_all_settings, update_site_settings
+    get_all_settings, update_site_settings, DBIntegrityError
 )
 
 app = Flask(__name__)
@@ -1012,7 +1011,7 @@ def api_admin_stats():
 
     # Today's Orders & Sales
     today_prefix = datetime.now().strftime('%Y-%m-%d')
-    c.execute('SELECT COUNT(*) as cnt, COALESCE(SUM(total_amount), 0) as rev FROM orders WHERE created_at LIKE ?', (f'{today_prefix}%',))
+    c.execute('SELECT COUNT(*) as cnt, COALESCE(SUM(total_amount), 0) as rev FROM orders WHERE DATE(created_at) = ?', (today_prefix,))
     today_stats = c.fetchone()
     today_orders = int(today_stats['cnt'])
     today_sales = float(today_stats['rev'])
@@ -1113,7 +1112,7 @@ def api_admin_products():
             new_id = c.lastrowid
             conn.close()
             return jsonify({'success': True, 'message': 'নতুন পণ্য সফলভাবে যুক্ত করা হয়েছে!', 'id': new_id})
-        except sqlite3.IntegrityError:
+        except DBIntegrityError:
             conn.close()
             return jsonify({'success': False, 'message': 'এই SKU কোড দিয়ে ইতিমধ্যে একটি পণ্য রয়েছে'}), 400
 
