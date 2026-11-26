@@ -347,7 +347,7 @@ function initSearchAutocomplete() {
                                 <img src="${p.image}" alt="${p.title}" class="w-12 h-12 object-cover rounded-md border">
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-slate-800 truncate">${p.title}</p>
-                                    <p class="text-xs text-slate-500">${p.category_name} &bull; ${p.brand || 'BongoBazaar'}</p>
+                                    <p class="text-xs text-slate-500">${p.category_name} &bull; ${p.brand || window.SHOP_NAME || 'BongoBazaar'}</p>
                                     <div class="flex items-center gap-2 mt-0.5">
                                         <span class="text-xs font-bold text-sky-600">৳${pPrice.toLocaleString('en-IN')}</span>
                                         ${p.sale_price ? `<span class="text-xs text-slate-400 line-through">৳${p.price.toLocaleString('en-IN')}</span>` : ''}

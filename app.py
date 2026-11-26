@@ -5,6 +5,7 @@ Flask Backend with RESTful APIs, Session Management, SQLite Database, and Templa
 import os
 import json
 import random
+import re
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import (
@@ -23,9 +24,31 @@ if not secret_key:
 app.secret_key = secret_key
 app.config['JSON_SORT_KEYS'] = False
 
+def _split_display_name(name):
+    """Split a shop name into (first, last) parts for the two-tone header logo.
+
+    'My Shop' -> ('My', 'Shop'); 'BongoBazaar' -> ('Bongo', 'Bazaar');
+    a single word with no CamelCase split -> (name, '').
+    Falls back to 'BongoBazaar' when the name is missing or empty, so the
+    header never renders blank.
+    """
+    name = (name or '').strip() or 'BongoBazaar'
+    if ' ' in name:
+        first, last = name.rsplit(' ', 1)
+        return first.strip(), last.strip()
+    segments = re.findall(r'[A-Z][a-z0-9]*', name)
+    if len(segments) >= 2 and any(len(s) > 1 for s in segments):
+        return ''.join(segments[:-1]), segments[-1]
+    return name, ''
+
+
 @app.context_processor
 def inject_site_settings():
-    return dict(site_settings=get_all_settings())
+    # Runs on every request, so a name saved in admin Settings shows up on
+    # the public site immediately with no restart.
+    settings = get_all_settings()
+    first, last = _split_display_name(settings.get('shop_name'))
+    return dict(site_settings=settings, shop_name_first=first, shop_name_last=last)
 
 # Ensure DB initialized
 init_db()
